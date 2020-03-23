@@ -12,7 +12,6 @@
 #include <condition_variable>
 
 #include <vector>
-#include <stack>
 
 #include <string_view>
 
@@ -22,18 +21,44 @@ namespace concurrencpp::details {
 	class waiting_worker_stack;
 
 	class waiting_worker_stack {
+		/*
+			An implementation of the simple lock-free Treiber stack.
+			Treiber algorithm presents an ABA problem:
+
+			let's say our stack looks logically like this : [Head = A] -> B -> C -> nil
+			1) thread_1 reads A.next and stores it locally on the stack, A next is B. then thread_1 gets interrupted.
+
+			2) thread_2 pops A,B and C and re-pushes them in a slightly different order :
+				[Head = A] -> C -> B -> nil
+
+			3) thread_1 continues where it stopped and CASes A. since stack's head is A ,
+			and the local A.next is B, Head is now B. 
+			so the stack now looks like [Head = B] -> nil (C got lost)
+	
+			this might cause 2 problems, non is serious for us to handle:
+
+			a) If ABA occures, some nodes might get lost, leading to a memory leak.
+				==> Not a problem here because nodes are anyway owned by their respective 
+				workers. the memory is reclaimed fully when the threadpool destructor is called.
+				this stack doesn't own workers' addresses.
+
+			b) If ABA occures, some nodes might get lost. in our scenario, some waiting workers
+				are lost.
+				==> in owr case, we can live with it. this stack is not meant to be absolute, but a strong hint
+				which threads are waiting. even if some nodes are "lost", we get other waiting threads. 
+				Even in the worst case were all nodes are lost, we just fall back to round-robin.	
+			*/
 
 	public:
 		struct node {
 			thread_pool_worker* const self;
-			node* next;
+			std::atomic<node*> next;
 
 			node(thread_pool_worker* worker) noexcept;
 		};
 
 	private:
-		spinlock m_lock;
-		node* m_head;
+		std::atomic<node*> m_head;
 		
 	public:
 		waiting_worker_stack() noexcept;

@@ -16,31 +16,36 @@ using concurrencpp::details::thread_pool_listener_base;
 
 using listener_ptr = std::shared_ptr<thread_pool_listener_base>;
 
-waiting_worker_stack::node::node(thread_pool_worker* worker) noexcept : self(worker) {}
+waiting_worker_stack::node::node(thread_pool_worker* worker) noexcept : 
+	self(worker),
+	next(nullptr){}
 
-waiting_worker_stack::waiting_worker_stack() noexcept : m_head(nullptr) {}
+waiting_worker_stack::waiting_worker_stack() noexcept : 
+	m_head(nullptr) {}
 
-void waiting_worker_stack::push(waiting_worker_stack::node* worker) noexcept {
-	std::unique_lock<decltype(m_lock)> lock(m_lock);
-	if (m_head == nullptr) {
-		worker->next = nullptr;
-		m_head = worker;
-		return;
+void waiting_worker_stack::push(waiting_worker_stack::node* worker_node) noexcept {
+	while (true){
+		auto head = m_head.load(std::memory_order_acquire);
+		worker_node->next.store(head, std::memory_order_release);
+
+		if (m_head.compare_exchange_weak(head, worker_node)) {
+			return;
+		}
 	}
-
-	worker->next = m_head;
-	m_head = worker;
 }
 
 thread_pool_worker* waiting_worker_stack::pop() noexcept {
-	std::unique_lock<decltype(m_lock)> lock(m_lock);
-	if (m_head == nullptr) {
-		return nullptr;
-	}
+	while (true) {
+		auto head = m_head.load(std::memory_order_acquire);
+		if (head == nullptr) {
+			return nullptr;
+		}
 
-	auto node = m_head;
-	m_head = m_head->next;
-	return node->self;
+		auto next = head->next.load(std::memory_order_acquire);
+		if (m_head.compare_exchange_weak(head, next)) {
+			return head->self;
+		}
+	}
 }
 
 thread_local thread_pool_worker* thread_pool_worker::tl_self_ptr = nullptr;
