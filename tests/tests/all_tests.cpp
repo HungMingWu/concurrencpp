@@ -1,9 +1,9 @@
 #include "all_tests.h"
 
 void concurrencpp::tests::test_all() {
-	//test_array_deque();
-	//test_spin_lock();
-	//test_task();
+	test_array_deque();
+	test_spin_lock();
+	test_task();
 
 	test_thread_pool();
 	test_single_worker_thread();
