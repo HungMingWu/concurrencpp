@@ -32,21 +32,21 @@ namespace concurrencpp::details {
 				[Head = A] -> C -> B -> nil
 
 			3) thread_1 continues where it stopped and CASes A. since stack's head is A ,
-			and the local A.next is B, Head is now B. 
+			and the local A.next is B, Head is now B.
 			so the stack now looks like [Head = B] -> nil (C got lost)
-	
+
 			this might cause 2 problems, non is serious for us to handle:
 
 			a) If ABA occures, some nodes might get lost, leading to a memory leak.
-				==> Not a problem here because nodes are anyway owned by their respective 
+				==> Not a problem here because nodes are anyway owned by their respective
 				workers. the memory is reclaimed fully when the threadpool destructor is called.
 				this stack doesn't own workers' addresses.
 
 			b) If ABA occures, some nodes might get lost. in our scenario, some waiting workers
 				are lost.
 				==> in owr case, we can live with it. this stack is not meant to be absolute, but a strong hint
-				which threads are waiting. even if some nodes are "lost", we get other waiting threads. 
-				Even in the worst case were all nodes are lost, we just fall back to round-robin.	
+				which threads are waiting. even if some nodes are "lost", we get other waiting threads.
+				Even in the worst case were all nodes are lost, we just fall back to round-robin.
 			*/
 
 	public:
@@ -59,7 +59,7 @@ namespace concurrencpp::details {
 
 	private:
 		std::atomic<node*> m_head;
-		
+
 	public:
 		waiting_worker_stack() noexcept;
 
@@ -67,17 +67,55 @@ namespace concurrencpp::details {
 		thread_pool_worker* pop() noexcept;
 	};
 
+	class wait_all_node {
+
+		/*
+			in order to wait for all tasks to be executed, we wait for all threads to become waiting.
+			when curr_waiting == max_workers then task_count == 0.
+		*/
+
+	private:
+		std::mutex m_counter_lock;
+		size_t m_curr_waiting;
+		const size_t m_max_workers;
+		std::condition_variable m_counter_condition;
+
+	public:
+		wait_all_node(size_t max_workers);
+
+		void thread_waiting();
+		void thread_running();
+
+		void wait_all();
+		bool wait_all(std::chrono::milliseconds ms);
+	};
+
 	class thread_pool_worker {
 
-		enum class status {
-			RUNNING,
-			IDLE
+		enum class action_status {
+			tasks_available,
+			no_tasks,
+			shutdown_requested
+		};
+
+		enum class worker_status {
+
+			/*
+			c.tor/d.tor <==>  idle <===> running
+								^		   |
+								|		   V
+								------- shutdown
+			*/
+
+			idle,
+			running,
+			shutdown
 		};
 
 	private:
 		std::mutex m_lock;
+		worker_status m_status;
 		array_deque<task> m_tasks;
-		status m_status;
 		std::condition_variable m_condition;
 		std::thread m_thread;
 		std::thread::id m_thread_id; //cached m_thread id.
@@ -89,18 +127,19 @@ namespace concurrencpp::details {
 		void assert_self_thread() const noexcept;
 		void assert_idle_thread() const noexcept;
 
-		void drain_local_queue();
-		bool try_steal_task();
-		
-		bool wait_for_task();
-		bool wait_for_task_impl(std::unique_lock<std::mutex>& lock);
+		action_status drain_local_queue();
+		action_status try_steal_task();
+
+		action_status wait_for_task();
+		action_status wait_for_task_impl(std::unique_lock<std::mutex>& lock);
+
 		void exit(std::unique_lock<std::mutex>& lock);
-		
+
 		void dispose_worker(std::thread thread);
 		void activate_worker(std::unique_lock<std::mutex>& lock);
 
 		void work_loop() noexcept;
-	
+
 	public:
 		thread_pool_worker(thread_pool& parent_pool) noexcept;
 		thread_pool_worker(thread_pool_worker&&) noexcept;
@@ -127,6 +166,7 @@ namespace concurrencpp::details {
 		waiting_worker_stack m_waiting_workers;
 		std::vector<thread_pool_worker> m_workers;
 		std::atomic_size_t m_round_robin_index;
+		wait_all_node m_wait_all_node;
 		const size_t m_max_workers;
 		const std::string_view m_cancellation_msg;
 		const std::shared_ptr<thread_pool_listener_base> m_listener;
@@ -143,9 +183,15 @@ namespace concurrencpp::details {
 
 		std::thread::id enqueue(task task);
 
+		void wait_all();
+		bool wait_all(std::chrono::milliseconds ms);
+
 		//called by the workers
 		bool try_steal_task(thread_pool_worker& worker);
+
+		void mark_thread_running() noexcept;
 		void mark_thread_waiting(thread_pool_worker& waiting_thread) noexcept;
+
 		const std::shared_ptr<thread_pool_listener_base>& get_listener() const noexcept;
 		std::chrono::seconds max_waiting_time() const noexcept;
 	};

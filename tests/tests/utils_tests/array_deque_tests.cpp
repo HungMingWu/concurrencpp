@@ -100,7 +100,7 @@ void concurrencpp::tests::test_array_deque_move_constructor_impl() {
 
 	assert_same(deque_1.size(), 1'000);
 	assert_false(deque_1.empty());
-	assert_bigger(deque_1.capacity() , 0);
+	assert_bigger(deque_1.capacity(), 0);
 	assert_not_same(deque_1.begin(), deque_1.end());
 	assert_not_same(c_deque_1.begin(), c_deque_1.end());
 
@@ -207,7 +207,7 @@ void concurrencpp::tests::test_array_deque_emplace_back_impl() {
 		arr_deque.emplace_back(value);
 		std_deque.emplace_back(value);
 
-		assert_bigger_equal(arr_deque.capacity() , arr_deque.size());
+		assert_bigger_equal(arr_deque.capacity(), arr_deque.size());
 		assert_true(deque_equal(arr_deque, std_deque));
 	}
 }
@@ -235,7 +235,7 @@ void concurrencpp::tests::test_array_deque_pop_back_impl() {
 		std_deque.pop_back();
 
 		assert_same(value0, value1);
-		assert_bigger_equal(arr_deque.capacity() , arr_deque.size());
+		assert_bigger_equal(arr_deque.capacity(), arr_deque.size());
 		assert_true(deque_equal(arr_deque, std_deque));
 	}
 }
@@ -256,7 +256,7 @@ void concurrencpp::tests::test_array_deque_emplace_front_impl() {
 		arr_deque.emplace_front(value);
 		std_deque.emplace_front(value);
 
-		assert_bigger_equal(arr_deque.capacity() , arr_deque.size());
+		assert_bigger_equal(arr_deque.capacity(), arr_deque.size());
 		assert_true(deque_equal(arr_deque, std_deque));
 	}
 }
@@ -284,7 +284,7 @@ void concurrencpp::tests::test_array_deque_pop_front_impl() {
 		std_deque.pop_front();
 
 		assert_same(value0, value1);
-		assert_bigger_equal(arr_deque.capacity() , arr_deque.size());
+		assert_bigger_equal(arr_deque.capacity(), arr_deque.size());
 		assert_true(deque_equal(arr_deque, std_deque));
 	}
 }

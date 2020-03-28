@@ -40,6 +40,8 @@ add_executable(
 	tests/result_tests/result_promise_tests.cpp
 	tests/result_tests/coroutine_adapters_tests.cpp
 
+	tests/thread_tests/single_worker_thread_tests.cpp
+	tests/thread_tests/manual_worker_tests.cpp
 	tests/thread_tests/thread_group_tests.cpp
 	tests/thread_tests/thread_pool_tests.cpp
 )

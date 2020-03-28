@@ -54,7 +54,7 @@ namespace concurrencpp::details {
 	public:
 		await_context(void_coro_handle coro, std::shared_ptr<concurrencpp::executor> executor) noexcept :
 			m_coro(coro),
-			m_executor(std::move(executor)){}
+			m_executor(std::move(executor)) {}
 
 		await_context(await_context&& rhs) noexcept = default;
 

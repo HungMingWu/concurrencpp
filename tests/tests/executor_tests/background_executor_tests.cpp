@@ -60,7 +60,7 @@ void concurrencpp::tests::test_background_executor_destructor_test_0() {
 	});
 
 	executor->enqueue(cancellation_tester(exception_ptr));
-	
+
 	waiter.notify_all();
 	executor.reset();
 
@@ -92,7 +92,7 @@ void concurrencpp::tests::test_background_executor_destructor_test_1() {
 	}
 
 	waiter.notify_all();
-	executor.reset(); 
+	executor.reset();
 
 	//threadpool destructor returns after all tasks are cancelled, no need to wait 
 	assert_same(observer.get_execution_count(), 0);

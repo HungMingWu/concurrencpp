@@ -130,8 +130,8 @@ void concurrencpp::tests::test_result_get_impl() {
 		const auto now = high_resolution_clock::now();
 
 		assert_false(static_cast<bool>(result));
-		assert_bigger_equal(now , unblocking_time);
-		assert_smaller(now , unblocking_time + seconds(2));
+		assert_bigger_equal(now, unblocking_time);
+		assert_smaller(now, unblocking_time + seconds(2));
 		thread.join();
 	}
 
@@ -158,8 +158,8 @@ void concurrencpp::tests::test_result_get_impl() {
 		const auto now = high_resolution_clock::now();
 
 		assert_false(static_cast<bool>(result));
-		assert_bigger_equal(now , unblocking_time);
-		assert_smaller(now , unblocking_time + seconds(2));
+		assert_bigger_equal(now, unblocking_time);
+		assert_smaller(now, unblocking_time + seconds(2));
 		thread.join();
 	}
 }
@@ -194,8 +194,8 @@ void concurrencpp::tests::test_result_wait_impl() {
 		result.wait();
 		const auto now = high_resolution_clock::now();
 
-		assert_bigger_equal(now , unblocking_time);
-		assert_smaller(now , unblocking_time + seconds(2));
+		assert_bigger_equal(now, unblocking_time);
+		assert_smaller(now, unblocking_time + seconds(2));
 
 		test_ready_result_result(std::move(result));
 		thread.join();
@@ -217,8 +217,8 @@ void concurrencpp::tests::test_result_wait_impl() {
 		result.wait();
 		const auto now = high_resolution_clock::now();
 
-		assert_bigger_equal(now , unblocking_time);
-		assert_smaller(now , unblocking_time + seconds(2));
+		assert_bigger_equal(now, unblocking_time);
+		assert_smaller(now, unblocking_time + seconds(2));
 
 		test_ready_result_costume_exception(std::move(result), id);
 		thread.join();
@@ -235,7 +235,7 @@ void concurrencpp::tests::test_result_wait_impl() {
 		const auto time_after = high_resolution_clock::now();
 		const auto total_blocking_time = duration_cast<milliseconds>(time_after - time_before).count();
 
-		assert_smaller_equal(total_blocking_time , 3);
+		assert_smaller_equal(total_blocking_time, 3);
 		test_ready_result_result(std::move(result));
 	}
 
@@ -253,7 +253,7 @@ void concurrencpp::tests::test_result_wait_impl() {
 		const auto time_after = high_resolution_clock::now();
 		const auto total_blocking_time = duration_cast<milliseconds>(time_after - time_before).count();
 
-		assert_smaller_equal(total_blocking_time , 3);
+		assert_smaller_equal(total_blocking_time, 3);
 		test_ready_result_costume_exception(std::move(result), id);
 	}
 }
@@ -288,7 +288,7 @@ void concurrencpp::tests::test_result_wait_for_impl() {
 		const auto after = high_resolution_clock::now();
 		const auto time = duration_cast<milliseconds>(after - before).count();
 
-		assert_smaller_equal(time , 3);
+		assert_smaller_equal(time, 3);
 		assert_same(status, result_status::VALUE);
 	}
 
@@ -304,7 +304,7 @@ void concurrencpp::tests::test_result_wait_for_impl() {
 		const auto after = high_resolution_clock::now();
 		const auto time = duration_cast<milliseconds>(after - before).count();
 
-		assert_smaller_equal(time , 3);
+		assert_smaller_equal(time, 3);
 		assert_same(status, result_status::EXCEPTION);
 	}
 
@@ -319,7 +319,7 @@ void concurrencpp::tests::test_result_wait_for_impl() {
 		const auto time = duration_cast<seconds>(after - before);
 
 		assert_same(status, result_status::IDLE);
-		assert_bigger_equal(time.count() , 2);
+		assert_bigger_equal(time.count(), 2);
 	}
 
 	//if result is set before timeout, unblock, and return status::value
@@ -337,8 +337,8 @@ void concurrencpp::tests::test_result_wait_for_impl() {
 		const auto now = high_resolution_clock::now();
 
 		test_ready_result_result(std::move(result));
-		assert_bigger_equal(now , unblocking_time);
-		assert_smaller(now , unblocking_time + seconds(2));
+		assert_bigger_equal(now, unblocking_time);
+		assert_smaller(now, unblocking_time + seconds(2));
 		thread.join();
 	}
 
@@ -359,8 +359,8 @@ void concurrencpp::tests::test_result_wait_for_impl() {
 		const auto now = high_resolution_clock::now();
 
 		test_ready_result_costume_exception(std::move(result), id);
-		assert_bigger_equal(now , unblocking_time);
-		assert_smaller(now , unblocking_time + seconds(2));
+		assert_bigger_equal(now, unblocking_time);
+		assert_smaller(now, unblocking_time + seconds(2));
 
 		thread.join();
 	}
@@ -416,7 +416,7 @@ void concurrencpp::tests::test_result_wait_until_impl() {
 		const auto after = high_resolution_clock::now();
 		const auto time = duration_cast<milliseconds>(after - before).count();
 
-		assert_smaller_equal(time , 3);
+		assert_smaller_equal(time, 3);
 		assert_same(status, result_status::VALUE);
 	}
 
@@ -433,7 +433,7 @@ void concurrencpp::tests::test_result_wait_until_impl() {
 		const auto after = high_resolution_clock::now();
 		const auto time = duration_cast<milliseconds>(after - before).count();
 
-		assert_smaller_equal(time , 3);
+		assert_smaller_equal(time, 3);
 		assert_same(status, result_status::EXCEPTION);
 	}
 
@@ -447,7 +447,7 @@ void concurrencpp::tests::test_result_wait_until_impl() {
 		const auto now = high_resolution_clock::now();
 
 		assert_same(status, result_status::IDLE);
-		assert_bigger_equal(now , later);
+		assert_bigger_equal(now, later);
 	}
 
 	//if result is set before timeout, unblock, and return status::value
@@ -466,8 +466,8 @@ void concurrencpp::tests::test_result_wait_until_impl() {
 		const auto now = high_resolution_clock::now();
 
 		test_ready_result_result(std::move(result));
-		assert_bigger_equal(now , unblocking_time);
-		assert_smaller(now , unblocking_time + seconds(2));
+		assert_bigger_equal(now, unblocking_time);
+		assert_smaller(now, unblocking_time + seconds(2));
 		thread.join();
 	}
 
@@ -490,8 +490,8 @@ void concurrencpp::tests::test_result_wait_until_impl() {
 		const auto now = high_resolution_clock::now();
 
 		test_ready_result_costume_exception(std::move(result), id);
-		assert_bigger_equal(now , unblocking_time);
-		assert_smaller_equal(now , unblocking_time + seconds(2));
+		assert_bigger_equal(now, unblocking_time);
+		assert_smaller_equal(now, unblocking_time + seconds(2));
 		thread.join();
 	}
 }

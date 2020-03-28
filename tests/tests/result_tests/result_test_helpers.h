@@ -197,7 +197,7 @@ namespace concurrencpp::tests {
 		try {
 			result.get();
 		}
-		catch (concurrencpp::errors::executor_exception ex){
+		catch (concurrencpp::errors::executor_exception ex) {
 			assert_same(ex.throwing_executor.get(), throwing_executor.get());
 
 			try {

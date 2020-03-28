@@ -20,12 +20,12 @@ timer_impl_base::timer_impl_base(
 	m_due_time(due_time),
 	m_frequency(frequency),
 	m_deadline(make_deadline(milliseconds(due_time))),
-	m_prev(nullptr){
+	m_prev(nullptr) {
 	assert(static_cast<bool>(m_executor));
 }
 
 timer_action timer_impl_base::update(const time_point now) { //returns true if timer should be re-scheduled. false if cancelled/oneshote
-	const auto deadline = m_deadline;	
+	const auto deadline = m_deadline;
 	if (deadline > now) {
 		return timer_action::idle; //idle, deadline hasn't reached
 	}
@@ -36,7 +36,7 @@ timer_action timer_impl_base::update(const time_point now) { //returns true if t
 	if (frequency == timer_traits::k_oneshot_timer_frequency) {
 		return timer_action::fire_delete; //oneshot timer. shouldn't be re-enqueued
 	}
-	
+
 	m_deadline = make_deadline(milliseconds(frequency));
 	return timer_action::fire;
 }
@@ -100,7 +100,7 @@ void timer_impl_base::set_new_frequency(size_t new_frequency) noexcept {
 	m_frequency.store(new_frequency, std::memory_order_release);
 }
 
-timer::timer(std::shared_ptr<timer_impl_base> timer_impl) noexcept : m_impl(std::move(timer_impl)){}
+timer::timer(std::shared_ptr<timer_impl_base> timer_impl) noexcept : m_impl(std::move(timer_impl)) {}
 
 timer::~timer() noexcept {
 	cancel();
@@ -139,8 +139,8 @@ void timer::cancel() {
 
 	auto impl = std::move(m_impl);
 	auto timer_queue = impl->get_timer_queue().lock();
-	
-	if (!static_cast<bool>(timer_queue)) {		
+
+	if (!static_cast<bool>(timer_queue)) {
 		return;
 	}
 

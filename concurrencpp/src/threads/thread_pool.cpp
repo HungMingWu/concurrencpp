@@ -2,7 +2,6 @@
 #include "constants.h"
 
 #include "../errors.h"
-#include "../runtime/runtime.h"
 
 #include <string>
 
@@ -16,19 +15,19 @@ using concurrencpp::details::thread_pool_listener_base;
 
 using listener_ptr = std::shared_ptr<thread_pool_listener_base>;
 
-waiting_worker_stack::node::node(thread_pool_worker* worker) noexcept : 
+waiting_worker_stack::node::node(thread_pool_worker* worker) noexcept :
 	self(worker),
-	next(nullptr){}
+	next(nullptr) {}
 
-waiting_worker_stack::waiting_worker_stack() noexcept : 
+waiting_worker_stack::waiting_worker_stack() noexcept :
 	m_head(nullptr) {}
 
 void waiting_worker_stack::push(waiting_worker_stack::node* worker_node) noexcept {
-	while (true){
+	while (true) {
 		auto head = m_head.load(std::memory_order_acquire);
 		worker_node->next.store(head, std::memory_order_release);
 
-		if (m_head.compare_exchange_weak(head, worker_node)) {
+		if (m_head.compare_exchange_weak(head, worker_node, std::memory_order_acq_rel)) {
 			return;
 		}
 	}
@@ -42,22 +41,59 @@ thread_pool_worker* waiting_worker_stack::pop() noexcept {
 		}
 
 		auto next = head->next.load(std::memory_order_acquire);
-		if (m_head.compare_exchange_weak(head, next)) {
+		if (m_head.compare_exchange_weak(head, next, std::memory_order_acq_rel)) {
 			return head->self;
 		}
 	}
 }
 
+concurrencpp::details::wait_all_node::wait_all_node(size_t max_workers) :
+	m_curr_waiting(0),
+	m_max_workers(max_workers) {}
+
+void concurrencpp::details::wait_all_node::thread_waiting() {
+	{
+		std::unique_lock<decltype(m_counter_lock)> lock(m_counter_lock);
+		++m_curr_waiting;
+	}
+
+	m_counter_condition.notify_all();
+}
+
+void concurrencpp::details::wait_all_node::thread_running() {
+	{
+		std::unique_lock<decltype(m_counter_lock)> lock(m_counter_lock);
+		assert(m_curr_waiting != 0);
+		--m_curr_waiting;
+	}
+
+	m_counter_condition.notify_all();
+}
+
+void concurrencpp::details::wait_all_node::wait_all() {
+	std::unique_lock<decltype(m_counter_lock)> lock(m_counter_lock);
+	m_counter_condition.wait(lock, [this] {
+		return m_curr_waiting == m_max_workers;
+	});
+}
+
+bool concurrencpp::details::wait_all_node::wait_all(std::chrono::milliseconds ms) {
+	std::unique_lock<decltype(m_counter_lock)> lock(m_counter_lock);
+	return m_counter_condition.wait_for(lock, ms, [this] {
+		return m_curr_waiting == m_max_workers;
+	});
+}
+
 thread_local thread_pool_worker* thread_pool_worker::tl_self_ptr = nullptr;
 
 thread_pool_worker::thread_pool_worker(thread_pool& parent_pool) noexcept :
-	m_status(status::IDLE),
+	m_status(worker_status::idle),
 	m_parent_pool(parent_pool),
-	m_node(this){}
+	m_node(this) {}
 
-concurrencpp::details::thread_pool_worker::thread_pool_worker(thread_pool_worker&& rhs) noexcept :
+thread_pool_worker::thread_pool_worker(thread_pool_worker&& rhs) noexcept :
 	m_parent_pool(rhs.m_parent_pool),
-	m_node(this){
+	m_node(this) {
 	std::abort(); //shoudn't be called!
 }
 
@@ -66,42 +102,47 @@ thread_pool_worker::~thread_pool_worker() noexcept {
 	assert_idle_thread();
 }
 
-void thread_pool_worker::drain_local_queue() {
+thread_pool_worker::action_status thread_pool_worker::drain_local_queue() {
 	while (true) {
-		task task;
-		
-		{
-			std::unique_lock<decltype(m_lock)> lock(m_lock);
-			if (m_tasks.empty()) {
-				return;
-			}
-
-			task = m_tasks.pop_front();
+		std::unique_lock<decltype(m_lock)> lock(m_lock);
+		if (m_status == worker_status::shutdown) {
+			return action_status::shutdown_requested;
 		}
+
+		assert_self_thread();
+
+		if (m_tasks.empty()) {
+			break;
+		}
+
+		auto task = m_tasks.pop_front();
+		lock.unlock();
 
 		task();
 	}
+
+	return action_status::no_tasks;
 }
 
-bool thread_pool_worker::try_steal_task() {
-	return m_parent_pool.try_steal_task(*this);
+thread_pool_worker::action_status thread_pool_worker::try_steal_task() {
+	return m_parent_pool.try_steal_task(*this) ? action_status::tasks_available : action_status::no_tasks;
 }
 
 void thread_pool_worker::assert_self_thread() const noexcept {
-	assert(m_status == status::RUNNING);
+	assert(m_status != worker_status::idle);
 	assert(m_thread.joinable());
 	assert(m_thread.get_id() == std::this_thread::get_id());
 	assert(m_thread_id == m_thread.get_id());
 }
 
 void thread_pool_worker::assert_idle_thread() const noexcept {
-	assert(m_status == status::IDLE);
+	assert(m_status == worker_status::idle);
 	assert(m_tasks.empty());
 	assert(m_thread_id == std::thread::id());
 	//m_thread might be joinable and might not. joinable != running.
 }
 
-bool thread_pool_worker::wait_for_task_impl(std::unique_lock<std::mutex>& lock) {
+thread_pool_worker::action_status thread_pool_worker::wait_for_task_impl(std::unique_lock<std::mutex>& lock) {
 	assert(lock.owns_lock());
 	assert_self_thread();
 
@@ -112,8 +153,16 @@ bool thread_pool_worker::wait_for_task_impl(std::unique_lock<std::mutex>& lock) 
 		listener->on_thread_waiting(std::this_thread::get_id());
 	}
 
-	const auto task_found = m_condition.wait_for(lock, time_to_wait, [this] { return !m_tasks.empty(); });
- 
+	m_condition.wait_for(lock, time_to_wait, [this] {
+		return !m_tasks.empty() || (m_status == worker_status::shutdown);
+	});
+
+	if (m_status == worker_status::shutdown) {
+		return action_status::shutdown_requested;
+	}
+
+	const auto task_found = !m_tasks.empty();
+
 	if (static_cast<bool>(listener)) {
 		if (task_found) {
 			listener->on_thread_resuming(std::this_thread::get_id());
@@ -123,26 +172,39 @@ bool thread_pool_worker::wait_for_task_impl(std::unique_lock<std::mutex>& lock) 
 		}
 	}
 
-	return task_found;
+	return task_found ? action_status::tasks_available : action_status::no_tasks;
 }
 
-bool thread_pool_worker::wait_for_task() {
+thread_pool_worker::action_status thread_pool_worker::wait_for_task() {
 	m_parent_pool.mark_thread_waiting(*this);
 
 	std::unique_lock<decltype(m_lock)> lock(m_lock);
-	if (wait_for_task_impl(lock)) {
-		return true;
+	const auto status = wait_for_task_impl(lock);
+
+	switch (status)
+	{
+
+	case action_status::tasks_available: {
+		m_parent_pool.mark_thread_running();
+		break;
 	}
 
-	exit(lock);
-	return false;
+	case action_status::no_tasks:
+	case action_status::shutdown_requested: {
+		exit(lock);
+		break;
+	}
+
+	}
+
+	return status;
 }
 
 void thread_pool_worker::exit(std::unique_lock<std::mutex>& lock) {
 	assert(lock.owns_lock());
 	assert_self_thread();
 
-	m_status = status::IDLE;
+	m_status = worker_status::idle;
 	m_thread_id = std::thread::id();
 
 	lock.unlock();
@@ -150,61 +212,46 @@ void thread_pool_worker::exit(std::unique_lock<std::mutex>& lock) {
 }
 
 void thread_pool_worker::work_loop() noexcept {
-
-#ifdef  CRCPP_DEBUG_MODE
-	{
-		std::unique_lock<std::mutex> lock(m_lock);
-		assert(m_status == status::RUNNING);
-	}
-#endif 
-
 	tl_self_ptr = this;
+	m_parent_pool.mark_thread_running();
 
-	try {
-		while (true) {
-			drain_local_queue();
-
-			//no local tasks, try to steal some
-			if (try_steal_task()) {
-				continue;
-			}
-
-			//no tasks to steal, wait
-			if (!wait_for_task()) {
-				return;
-			}
+	while (true) {
+		if (drain_local_queue() == action_status::shutdown_requested) {
+			std::unique_lock<decltype(m_lock)> lock(m_lock);
+			return exit(lock);
 		}
-	}
-	catch (const thread_interrupter&) {
-		std::unique_lock<decltype(m_lock)> lock(m_lock);
-		return exit(lock);
-	}
-	catch (...) {
-		std::abort();
+
+		//no local tasks, try to steal some
+		if (try_steal_task() == action_status::tasks_available) {
+			continue;
+		}
+
+		//no tasks to steal, wait
+		if (wait_for_task() != action_status::tasks_available) {
+			return;
+		}
 	}
 }
 
 void concurrencpp::details::thread_pool_worker::signal_termination() {
 	{
 		std::unique_lock<decltype(m_lock)> lock(m_lock);
-		if (!m_thread.joinable()) {
+		if (m_status == worker_status::idle) {
 			assert_idle_thread();
 			return; //nothing to terminate
 		}
-	
-		m_tasks.emplace_front(interrupt_thread);
+
+		m_status = worker_status::shutdown;
 	}
 
 	m_condition.notify_all();
 }
 
-void thread_pool_worker::join() {	
+void thread_pool_worker::join() {
 	std::unique_lock<decltype(m_lock)> lock(m_lock);
-	m_condition.wait(lock, [this] {
-		return m_status == status::IDLE;
-	});
-
-	assert(m_status == status::IDLE);
+	m_condition.wait(lock, [this] { return m_status == worker_status::idle; });
+	
+	assert(m_status == worker_status::idle);
 	assert(m_thread_id == std::thread::id());
 	dispose_worker(std::move(m_thread));
 }
@@ -225,7 +272,7 @@ void thread_pool_worker::dispose_worker(std::thread worker_thread) {
 
 void thread_pool_worker::activate_worker(std::unique_lock<std::mutex>& lock) {
 	assert(lock.owns_lock());
-	assert(m_status == status::IDLE);
+	assert(m_status == worker_status::idle);
 	assert(m_thread_id == std::thread::id());
 
 	//m_worker might be a real idle thread, not a defaultly constructed thread. in this case, we need to join it.
@@ -233,7 +280,7 @@ void thread_pool_worker::activate_worker(std::unique_lock<std::mutex>& lock) {
 
 	m_thread = std::thread([this] { work_loop(); });
 	m_thread_id = m_thread.get_id();
-	m_status = status::RUNNING;
+	m_status = worker_status::running;
 
 	const auto listener = m_parent_pool.get_listener();
 	if (static_cast<bool>(listener)) {
@@ -256,7 +303,7 @@ std::thread::id thread_pool_worker::enqueue_if_empty(task& task) {
 	return {};
 }
 
-std::thread::id thread_pool_worker::enqueue(task& task, bool self) {		
+std::thread::id thread_pool_worker::enqueue(task& task, bool self) {
 	std::unique_lock<decltype(m_lock)> lock(m_lock);
 	m_tasks.emplace_back(std::move(task));
 
@@ -264,8 +311,8 @@ std::thread::id thread_pool_worker::enqueue(task& task, bool self) {
 		assert_self_thread();
 		return m_thread_id;
 	}
-	
-	if (m_status == status::IDLE) {
+
+	if (m_status == worker_status::idle) {
 		activate_worker(lock);
 		return m_thread_id;
 	}
@@ -308,18 +355,20 @@ thread_pool::thread_pool(
 	std::chrono::seconds max_waiting_time,
 	std::string_view cancellation_msg,
 	std::shared_ptr<thread_pool_listener_base> listener) :
-	m_listener(std::move(listener)),
-	m_max_waiting_time(max_waiting_time),
+	m_round_robin_index(0),
+	m_wait_all_node(max_workers_allowed),
+	m_max_workers(max_workers_allowed),
 	m_cancellation_msg(cancellation_msg),
-	m_max_workers(max_workers_allowed){
-	
+	m_listener(std::move(listener)),
+	m_max_waiting_time(max_waiting_time) {
+
 	m_workers.reserve(max_workers_allowed);
 	for (size_t i = 0; i < max_workers_allowed; i++) {
 		m_workers.emplace_back(*this);
 	}
 
 	for (auto& worker : m_workers) {
-		m_waiting_workers.push(worker.get_waiting_node());
+		mark_thread_waiting(worker);
 	}
 }
 
@@ -333,7 +382,7 @@ thread_pool::~thread_pool() noexcept {
 	for (auto& worker : m_workers) {
 		worker.join();
 	}
-	
+
 	concurrencpp::errors::broken_task error(m_cancellation_msg.data());
 	auto reason = std::make_exception_ptr(error);
 
@@ -369,6 +418,14 @@ std::thread::id thread_pool::enqueue(task task) {
 	return worker.enqueue(task, false);
 }
 
+void thread_pool::wait_all() {
+	m_wait_all_node.wait_all();
+}
+
+bool thread_pool::wait_all(std::chrono::milliseconds ms) {
+	return m_wait_all_node.wait_all(ms);
+}
+
 bool thread_pool::try_steal_task(thread_pool_worker& worker) {
 	/*
 		if this_thread's index is index0, try to steal from range [index0 + 1, ..., m_workers.size()]
@@ -376,28 +433,29 @@ bool thread_pool::try_steal_task(thread_pool_worker& worker) {
 		of tasks across thread pool threads
 	*/
 
-	auto try_steal_impl = [&](size_t index) noexcept{
+	auto try_steal_impl = [&](size_t index) noexcept {
 		auto task = m_workers[index].try_donate_task();
-		
+
 		if (!static_cast<bool>(task)) {
 			return false;
 		}
 
-		worker.enqueue(task, true);
+		task();
 		return true;
 	};
 
-	const auto worker_index = std::addressof(worker) - std::addressof(m_workers[0]);
-	assert(worker_index >= 0);
-	assert(static_cast<size_t>(worker_index) < m_workers.size());
 
-	for (size_t i = static_cast<size_t>(worker_index) + 1; i < m_workers.size(); i++) {
+	assert(std::addressof(worker) >= m_workers.data());
+	assert(std::addressof(worker) < m_workers.data() + m_workers.size());
+	const auto worker_index = static_cast<size_t>(std::addressof(worker) - m_workers.data());
+
+	for (size_t i = worker_index + 1; i < m_workers.size(); i++) {
 		if (try_steal_impl(i)) {
 			return true;
 		}
 	}
 
-	for (size_t i = 0; i < static_cast<size_t>(worker_index); i++) {
+	for (size_t i = 0; i < worker_index; i++) {
 		if (try_steal_impl(i)) {
 			return true;
 		}
@@ -408,6 +466,11 @@ bool thread_pool::try_steal_task(thread_pool_worker& worker) {
 
 void thread_pool::mark_thread_waiting(thread_pool_worker& waiting_thread) noexcept {
 	m_waiting_workers.push(waiting_thread.get_waiting_node());
+	m_wait_all_node.thread_waiting();
+}
+
+void thread_pool::mark_thread_running() noexcept {
+	m_wait_all_node.thread_running();
 }
 
 const listener_ptr& thread_pool::get_listener() const noexcept {

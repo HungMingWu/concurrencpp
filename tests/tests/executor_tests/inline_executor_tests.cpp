@@ -21,7 +21,7 @@ void concurrencpp::tests::test_inline_executor_enqueue() {
 	object_observer observer;
 	const size_t count = 1'000;
 	auto executor = concurrencpp::make_runtime()->inline_executor();
-	
+
 	for (size_t i = 0; i < count; i++) {
 		executor->enqueue(observer.get_testing_stub());
 	}

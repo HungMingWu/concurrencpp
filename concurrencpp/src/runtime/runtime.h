@@ -19,33 +19,33 @@ namespace concurrencpp {
 
 		size_t max_background_threads;
 		std::chrono::seconds max_background_thread_waiting_time;
-	
+
 		runtime_options() noexcept;
 
 		runtime_options(const runtime_options&) noexcept = default;
 		runtime_options& operator = (const runtime_options&) noexcept = default;
 	};
 
-	class runtime : public std::enable_shared_from_this<runtime> {		
+	class runtime : public std::enable_shared_from_this<runtime> {
 
 		friend std::shared_ptr<runtime> make_runtime();
 		friend std::shared_ptr<runtime> make_runtime(const runtime_options&);
 
 	private:
 		std::shared_ptr<timer_queue> m_timer_queue;
-	
-		std::shared_ptr<inline_executor> m_inline_executor; 
+
+		std::shared_ptr<inline_executor> m_inline_executor;
 		std::shared_ptr<thread_pool_executor> m_thread_pool_executor;
 		std::shared_ptr<background_executor> m_background_executor;
 		std::shared_ptr<thread_executor> m_thread_executor;
 
-		struct context{};
+		struct context {};
 
 	public:
 		runtime(const context& ctx);
 		runtime(const context& ctx, const runtime_options& options);
 
-		~runtime() noexcept;	
+		~runtime() noexcept;
 
 		std::shared_ptr<timer_queue> timer_queue() const noexcept;
 

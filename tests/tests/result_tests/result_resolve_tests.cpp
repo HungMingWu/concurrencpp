@@ -83,7 +83,7 @@ result<void> concurrencpp::tests::test_result_resolve_ready_val() {
 
 	assert_false(static_cast<bool>(result));
 	assert_same(thread_id_0, thread_id_1);
-	assert_smaller_equal(elapsed_time , 10);
+	assert_smaller_equal(elapsed_time, 10);
 	test_ready_result_result(std::move(done_result));
 }
 
@@ -108,7 +108,7 @@ result<void> concurrencpp::tests::test_result_resolve_ready_err() {
 
 	assert_false(static_cast<bool>(result));
 	assert_same(thread_id_0, thread_id_1);
-	assert_smaller_equal(elapsed_time , 10);
+	assert_smaller_equal(elapsed_time, 10);
 	test_ready_result_costume_exception(std::move(done_result), id);
 }
 
@@ -193,7 +193,7 @@ result<void> concurrencpp::tests::test_result_resolve_via_ready_val() {
 
 	assert_false(static_cast<bool>(result));
 	assert_same(thread_id_0, thread_id_1);
-	assert_smaller_equal(elapsed_time , 10);
+	assert_smaller_equal(elapsed_time, 10);
 	assert_false(executor->scheduled_async());
 	test_ready_result_result(std::move(done_result));
 }
@@ -220,7 +220,7 @@ result<void> concurrencpp::tests::test_result_resolve_via_ready_err() {
 
 	assert_false(static_cast<bool>(result));
 	assert_same(thread_id_0, thread_id_1);
-	assert_smaller_equal(elapsed_time , 10);
+	assert_smaller_equal(elapsed_time, 10);
 	assert_false(executor->scheduled_async());
 	test_ready_result_costume_exception(std::move(done_result), id);
 }
@@ -343,7 +343,7 @@ result<void> concurrencpp::tests::test_result_resolve_via_not_ready_val_executor
 	ex->set_rp_value(std::move(rp));
 
 	auto done_result = co_await result.resolve_via(te, false);
-	
+
 	assert_false(static_cast<bool>(result));
 	assert_true(ex->scheduled_inline()); //since te threw, execution is resumed in ex::m_setting_thread
 	test_executor_error_thrown(std::move(done_result), te);
@@ -357,7 +357,7 @@ result<void> concurrencpp::tests::test_result_resolve_via_not_ready_err_executor
 	auto ex = make_test_executor();
 	auto te = std::make_shared<throwing_executor>();
 
-	const auto id =  ex->set_rp_err(std::move(rp));
+	const auto id = ex->set_rp_err(std::move(rp));
 	(void)id;
 
 	auto done_result = co_await result.resolve_via(te, false);

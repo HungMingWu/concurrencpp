@@ -107,7 +107,7 @@ namespace concurrencpp::details {
 		const_array_deque_iterator(array_deque_iterator<type> it) noexcept :
 			m_elements(it.m_elements),
 			m_cursor(it.m_cursor),
-			m_capacity(it.m_capacity){}
+			m_capacity(it.m_capacity) {}
 
 		const_array_deque_iterator(const const_array_deque_iterator& rhs) noexcept = default;
 
@@ -260,7 +260,7 @@ namespace concurrencpp::details {
 		template<class ... argument_type>
 		void emplace_front(argument_type&& ... arguments) {
 			static_assert(
-				std::is_constructible_v<type, argument_type&&...>,
+				std::is_constructible_v<type, argument_type && ...>,
 				"concurrencpp::details::array_deque::emplace_front - can't build <<type>> from <<argument_types...>>");
 
 			ensure_initial_capacity();

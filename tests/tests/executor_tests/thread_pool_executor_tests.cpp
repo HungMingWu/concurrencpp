@@ -25,7 +25,7 @@ void concurrencpp::tests::test_thread_pool_executor_name() {
 
 void concurrencpp::tests::test_thread_pool_executor_enqueue() {
 	object_observer observer;
-	const size_t count = 10'000;
+	const size_t task_count = 128;
 
 	concurrencpp::runtime_options opts;
 	opts.max_cpu_threads = 10;
@@ -33,12 +33,12 @@ void concurrencpp::tests::test_thread_pool_executor_enqueue() {
 
 	auto executor = concurrencpp::make_runtime(opts)->thread_pool_executor();
 
-	for (size_t i = 0; i < count; i++) {
-		executor->enqueue(observer.get_testing_stub(std::chrono::milliseconds(0)));
+	for (size_t i = 0; i < task_count; i++) {
+		executor->enqueue(observer.get_testing_stub(std::chrono::milliseconds(10)));
 	}
 
-	assert_true(observer.wait_execution_count(count, std::chrono::minutes(2)));
-	assert_true(observer.wait_destruction_count(count, std::chrono::minutes(2)));
+	assert_true(observer.wait_execution_count(task_count, std::chrono::minutes(2)));
+	assert_true(observer.wait_destruction_count(task_count, std::chrono::minutes(2)));
 
 	auto execution_map = observer.get_execution_map();
 
@@ -60,7 +60,7 @@ void concurrencpp::tests::test_thread_pool_executor_destructor_test_0() {
 	});
 
 	executor->enqueue(cancellation_tester(exception_ptr));
-	
+
 	waiter.notify_all();
 	executor.reset();
 

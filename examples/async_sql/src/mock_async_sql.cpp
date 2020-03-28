@@ -9,7 +9,7 @@ namespace mock_async_sql {
 
 	class mock_sql_runner {
 
-	private:	
+	private:
 		std::mutex m_lock;
 		std::vector<std::future<void>> m_tasks;
 
@@ -28,7 +28,7 @@ namespace mock_async_sql {
 
 	public:
 		mock_sql_runner() noexcept = default;
-		
+
 		~mock_sql_runner() noexcept {
 			std::unique_lock<std::mutex> lock(m_lock);
 			for (auto& task : m_tasks) {
@@ -47,7 +47,7 @@ namespace mock_async_sql {
 			std::unique_ptr<connection_callback_base> cb) {
 			auto future = std::async(std::launch::async, [conn_ptr, cb = std::move(cb)]() mutable {
 				std::this_thread::sleep_for(std::chrono::seconds(2));
-			
+
 				if (failed()) {
 					auto error_ptr = std::make_exception_ptr(std::runtime_error("db_connection::connect - can't connect."));
 					return cb->on_connection(error_ptr, nullptr);
@@ -83,15 +83,15 @@ namespace mock_async_sql {
 			std::unique_lock<std::mutex> lock(m_lock);
 			m_tasks.emplace_back(std::move(future));
 		}
-	};	
+	};
 
 	mock_sql_runner global_runner;
 }
 
-void mock_async_sql::db_connection::connect(std::unique_ptr<connection_callback_base> connection_callback){
+void mock_async_sql::db_connection::connect(std::unique_ptr<connection_callback_base> connection_callback) {
 	global_runner.mock_connection(shared_from_this(), std::move(connection_callback));
 }
 
-void mock_async_sql::db_connection::query(std::string query_string, std::unique_ptr<query_callback_base> query_callback){
+void mock_async_sql::db_connection::query(std::string query_string, std::unique_ptr<query_callback_base> query_callback) {
 	global_runner.mock_query_result(shared_from_this(), std::move(query_callback));
 }

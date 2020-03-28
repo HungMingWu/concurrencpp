@@ -86,7 +86,7 @@ namespace concurrencpp::tests {
 		}
 
 		std::vector<size_t> calculate_frequencies() {
-			std::unique_lock<std::mutex> lock(m_lock);							
+			std::unique_lock<std::mutex> lock(m_lock);
 			std::vector<size_t> intervals;
 			intervals.reserve(m_time_points.size());
 
@@ -192,7 +192,7 @@ namespace concurrencpp::tests {
 		void test_oneshot_timer(timer& timer) {
 			assert_timer_stats(timer);
 			assert_invoked_corrently();
-			
+
 			interval_ok(calculate_due_time(), m_due_time);
 		}
 	};
@@ -215,7 +215,7 @@ void concurrencpp::tests::test_many_timers() {
 	auto runtime = make_runtime();
 	auto timer_queue = runtime->timer_queue();
 	random randomizer;
-	
+
 	const size_t due_time_min = 100;
 	const size_t due_time_max = 5'000;
 	const size_t frequency_min = 100;
@@ -244,7 +244,7 @@ void concurrencpp::tests::test_many_timers() {
 	for (auto& pair : timers) {
 		auto& timer = pair.first;
 		auto tester = pair.second;
-	
+
 		tester->test(timer);
 		timer.cancel();
 	}
@@ -261,7 +261,7 @@ void concurrencpp::tests::test_timer_destructor_empty_timer() {
 
 void concurrencpp::tests::test_timer_destructor_dead_timer_queue() {
 	timer timer;
-	
+
 	{
 		auto runtime = make_runtime();
 		auto timer_queue = runtime->timer_queue();
@@ -433,7 +433,7 @@ void concurrencpp::tests::test_timer_set_frequency_after_due_time() {
 	auto runtime = make_runtime();
 	auto timer_queue = runtime->timer_queue();
 	auto tester = std::make_shared<timer_tester_executor>(timer_queue);
-	auto timer = tester->start_timer_test(1'000,1'000);
+	auto timer = tester->start_timer_test(1'000, 1'000);
 
 	std::this_thread::sleep_for(milliseconds(1200));
 
@@ -464,7 +464,7 @@ void concurrencpp::tests::test_timer_once() {
 	assert_same(timer.get_due_time(), 350);
 	assert_same(timer.get_frequency(), static_cast<size_t>(-1));
 	assert_same(timer.get_executor(), tester);
-	assert_same(timer.get_timer_queue().lock(), timer_queue);	
+	assert_same(timer.get_timer_queue().lock(), timer_queue);
 
 	std::this_thread::sleep_for(seconds(5));
 
@@ -526,7 +526,7 @@ void concurrencpp::tests::test_timer_assignment_operator_non_empty_to_non_empty(
 	assert_true(timer0);
 	assert_false(timer1);
 
-	assert_same(observer0.get_destruction_count(), 1);	
+	assert_same(observer0.get_destruction_count(), 1);
 	assert_same(observer1.get_destruction_count(), 0);
 
 	assert_same(timer0.get_due_time(), 20 * 1'000);

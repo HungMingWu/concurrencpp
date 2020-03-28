@@ -1,19 +1,19 @@
 /*
-	In this example, we'll use the concurrencpp executors to process a file asynchronously. 
+	In this example, we'll use the concurrencpp executors to process a file asynchronously.
 	The application gets three parameters through the command line argument:
 	argv[0] - the path to the binary that created this process (not used in this example)
 	argv[1] - the file to process
 	argv[2] - the character to replace
 	argv[3] - the character to replace with.
 
-	Since standard file streams are blocking, we would like to execute file-io operations on 
+	Since standard file streams are blocking, we would like to execute file-io operations on
 	the concurrencpp::background_executor, who's job is to execute relatively short-blocking tasks (like file-io).
-	
+
 	Processing the file content is a cpu-bound task (iterating over a binary buffer and potentially changing characters),
-	so after reading the file content we will resume execution on the concurrencpp::thread_pool_executor, 
-	
+	so after reading the file content we will resume execution on the concurrencpp::thread_pool_executor,
+
 	After the content has been modified, it is ready to be re-written back to the file. we will again schedule a blocking
-	write operation on the concurrencpp::background_executor. 
+	write operation on the concurrencpp::background_executor.
 */
 
 #include <iostream>
@@ -27,13 +27,13 @@ concurrencpp::result<void> replace_chars_in_file(
 	const std::string file_path,
 	char from,
 	char to) {
-	
+
 	auto file_content_result = runtime->background_executor()->submit([file_path] {
-		std::ifstream input; 
+		std::ifstream input;
 		input.exceptions(std::ifstream::badbit);
-		input.open(file_path, std::ios::binary);	
-		std::vector<char> buffer(std::istreambuf_iterator<char>(input), {});	
-		input.close();	
+		input.open(file_path, std::ios::binary);
+		std::vector<char> buffer(std::istreambuf_iterator<char>(input), {});
+		input.close();
 		return buffer;
 	});
 
@@ -49,12 +49,12 @@ concurrencpp::result<void> replace_chars_in_file(
 	}
 
 	//schedule the write operation on the background executor and await on it to finish.
-	co_await runtime->background_executor()->submit([file_path, file_content = std::move(file_content)] {
+	co_await runtime->background_executor()->submit([file_path, file_content = std::move(file_content)]{
 		std::ofstream output;
 		output.exceptions(std::ofstream::badbit);
 		output.open(file_path, std::ios::binary);
 		output.write(file_content.data(), file_content.size());
-	});
+		});
 
 	std::cout << "file has been modified successfully" << std::endl;
 }
@@ -65,7 +65,7 @@ int main(int argc, const char* argv[]) {
 argv[1] - the file to process\n\
 argv[2] - the character to replace\n\
 argv[3] - the character to replace with";
-		
+
 		std::cerr << help_msg << std::endl;
 		return -1;
 	}

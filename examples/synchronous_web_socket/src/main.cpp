@@ -12,11 +12,11 @@
 
 	There are merits in using concurrencpp::thread_executor over a raw std:thread :
 		1) std::thread is a hard-coded executor. since all concurrencpp executors are polymorphic,
-		executing tasks is decoupled away. if we want to change an std::thread to let's say, a threadpool, 
+		executing tasks is decoupled away. if we want to change an std::thread to let's say, a threadpool,
 		we will have to rewrite these lines of code that deal with thread creation, enqueuing etc.
 		with concurrencpp::thread_executor, we just have to change the underlying type of the executor,
 		and let the dynamic dispatching do the work for us.
-		2) std::thread has to be manually joined or detached. every std::thread_executor is stored and monitored 
+		2) std::thread has to be manually joined or detached. every std::thread_executor is stored and monitored
 		inside the concurrencpp runtime, and is joined automatically when the runtime object is destroyed.
 
 	Do note that this example uses a mock websocket library and no real connection/reading is going to be executed.

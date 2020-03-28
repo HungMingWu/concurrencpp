@@ -65,6 +65,12 @@
     <ClCompile Include="tests\utils_tests\task_tests.cpp">
       <Filter>tests\utils_tests</Filter>
     </ClCompile>
+    <ClCompile Include="tests\thread_tests\single_worker_thread_tests.cpp">
+      <Filter>tests\thread_tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\thread_tests\manual_worker_tests.cpp">
+      <Filter>tests\thread_tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tester">

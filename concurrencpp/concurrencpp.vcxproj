@@ -177,6 +177,7 @@
     <ClInclude Include="src\runtime\constants.h" />
     <ClInclude Include="src\runtime\runtime.h" />
     <ClInclude Include="src\threads\constants.h" />
+    <ClInclude Include="src\threads\manual_worker.h" />
     <ClInclude Include="src\threads\single_worker_thread.h" />
     <ClInclude Include="src\threads\thread_group.h" />
     <ClInclude Include="src\threads\thread_pool.h" />
@@ -193,6 +194,7 @@
     <ClCompile Include="src\executors\executors.cpp" />
     <ClCompile Include="src\executors\task.cpp" />
     <ClCompile Include="src\runtime\runtime.cpp" />
+    <ClCompile Include="src\threads\manual_worker.cpp" />
     <ClCompile Include="src\threads\single_worker_thread.cpp" />
     <ClCompile Include="src\threads\thread_group.cpp" />
     <ClCompile Include="src\threads\thread_pool.cpp" />

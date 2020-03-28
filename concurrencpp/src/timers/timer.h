@@ -7,7 +7,7 @@
 
 #include "../forward_declerations.h"
 
-namespace concurrencpp::details {	
+namespace concurrencpp::details {
 	struct timer_traits {
 		constexpr static size_t k_oneshot_timer_frequency = static_cast<size_t>(-1);
 	};
@@ -33,18 +33,18 @@ namespace concurrencpp::details {
 		time_point m_deadline; //set by the c.tor, changed only by the timer_queue thread.
 		std::shared_ptr<timer_impl_base> m_next;
 		timer_impl_base* m_prev;
-	
+
 		static time_point make_deadline(milliseconds diff) noexcept { return clock_type::now() + diff; }
 
 	public:
 		timer_impl_base(
 			size_t due_time,
-			size_t frequency,		
+			size_t frequency,
 			std::shared_ptr<concurrencpp::executor> executor,
 			std::weak_ptr<concurrencpp::timer_queue> timer_queue) noexcept;
-		
+
 		virtual ~timer_impl_base() noexcept = default;
-		virtual void execute() = 0;	
+		virtual void execute() = 0;
 
 		timer_action update(const time_point now);
 		void schedule();
@@ -110,14 +110,14 @@ namespace concurrencpp {
 
 		void cancel();
 
-		size_t get_due_time() const;	
+		size_t get_due_time() const;
 		size_t get_frequency() const;
 		std::shared_ptr<concurrencpp::executor> get_executor() const;
 		std::weak_ptr<concurrencpp::timer_queue> get_timer_queue() const;
-	
+
 		void set_frequency(size_t new_frequency);
-	
-		operator bool() const noexcept { return static_cast<bool>(m_impl); }	
+
+		operator bool() const noexcept { return static_cast<bool>(m_impl); }
 	};
 }
 

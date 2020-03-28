@@ -4,12 +4,12 @@
 #include <typeinfo>
 #include <exception>
 #include <type_traits>
- 
+
 #include <cassert>
 
 namespace concurrencpp::details {
 	class task_context;
-	struct task_interface;	
+	struct task_interface;
 	template<class functor_type> class task_impl;
 }
 
@@ -37,13 +37,13 @@ namespace concurrencpp::details {
 	public:
 		using decayed_type = typename std::decay_t<functor_type>;
 
-		constexpr static auto is_inlinable = 
+		constexpr static auto is_inlinable =
 			sizeof(decayed_type) <= task_traits::k_inline_buffer_size &&
 			std::is_nothrow_move_constructible_v<decayed_type>;
 
 		constexpr static auto is_nothrow_movable = std::is_nothrow_move_constructible_v<decayed_type>;
 
-		using has_cancel = has_cancel_impl<decayed_type>;	
+		using has_cancel = has_cancel_impl<decayed_type>;
 	};
 
 	struct task_interface {
@@ -78,7 +78,7 @@ namespace concurrencpp::details {
 		task_interface* pointer() noexcept { return m_pointer; }
 		const task_interface* pointer() const noexcept { return m_pointer; }
 
-		bool is_inlined() const noexcept { 
+		bool is_inlined() const noexcept {
 			return m_pointer == nullptr || m_pointer == buffer_ptr();
 		}
 
@@ -134,11 +134,11 @@ namespace concurrencpp::details {
 			m_functor(std::forward<undecayed_functor_type>(functor)) {}
 
 		task_impl(task_impl&&) noexcept(functor_traits<functor_type>::is_nothrow_movable) = default;
-	
+
 		void execute() { m_functor(); }
 
-		void cancel(std::exception_ptr reason) noexcept { 
-			cancel_impl(reason, has_cancel()); 
+		void cancel(std::exception_ptr reason) noexcept {
+			cancel_impl(reason, has_cancel());
 		}
 
 		virtual void move_to(task_context& dest) noexcept {
@@ -161,7 +161,7 @@ namespace concurrencpp {
 		task() noexcept = default;
 		~task() noexcept = default;
 
-		task(std::nullptr_t) noexcept : task(){}
+		task(std::nullptr_t) noexcept : task() {}
 
 		template<class functor_type>
 		task(functor_type&& functor) : task() {
@@ -182,7 +182,7 @@ namespace concurrencpp {
 		void cancel(std::exception_ptr reason) noexcept;
 
 		operator bool() const noexcept { return static_cast<bool>(m_ctx); }
-	
+
 		const std::type_info& type() const noexcept { return m_ctx.type(); }
 
 		bool uses_sbo() const noexcept { return m_ctx.is_inlined(); }

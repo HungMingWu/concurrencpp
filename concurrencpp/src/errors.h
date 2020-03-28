@@ -26,7 +26,7 @@ namespace concurrencpp::errors {
 		empty_timer(const std::string& error_messgae) : empty_object(error_messgae) {}
 	};
 
-	struct broken_task : public std::runtime_error {	
+	struct broken_task : public std::runtime_error {
 		broken_task(const std::string& message) : runtime_error(message) {}
 		broken_task(const char* message) : runtime_error(message) {}
 	};

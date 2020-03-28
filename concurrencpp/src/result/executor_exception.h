@@ -16,7 +16,7 @@ namespace concurrencpp::errors {
 			std::shared_ptr<concurrencpp::executor> throwing_executor) noexcept :
 			runtime_error("concurrencpp::result - an exception was thrown while trying to enqueue result continuation."),
 			thrown_exeption(thrown_exeption),
-			throwing_executor(throwing_executor){}
+			throwing_executor(throwing_executor) {}
 
 		executor_exception(const executor_exception&) noexcept = default;
 		executor_exception(executor_exception&&) noexcept = default;

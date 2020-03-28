@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <thread>
 
-namespace concurrencpp::tests::details{
+namespace concurrencpp::tests::details {
 	std::string to_string(bool value);
 	std::string to_string(int value);
 	std::string to_string(long value);
@@ -109,7 +109,7 @@ namespace concurrencpp::tests {
 
 		assert_false(true);
 	}
-	
+
 }
 
 #endif //CONCURRENCPP_ASSERTIONS_H

@@ -20,7 +20,7 @@ namespace concurrencpp::details {
 		return static_cast<size_t>(hardware_concurrency() * consts::k_background_threadpool_worker_count_factor);
 	}
 
-	constexpr static std::chrono::seconds k_default_max_worker_wait_time = 
+	constexpr static std::chrono::seconds k_default_max_worker_wait_time =
 		std::chrono::seconds(consts::k_max_worker_waiting_time_sec);
 
 	void interrupt_thread() { throw thread_interrupter(); }
@@ -47,16 +47,16 @@ runtime_options::runtime_options() noexcept :
 	max_cpu_threads(details::default_max_cpu_workers()),
 	max_cpu_thread_waiting_time(details::k_default_max_worker_wait_time),
 	max_background_threads(details::default_max_background_workers()),
-	max_background_thread_waiting_time(details::k_default_max_worker_wait_time){}
+	max_background_thread_waiting_time(details::k_default_max_worker_wait_time) {}
 
 /*
 	runtime
 */
 
-runtime::runtime(const runtime::context& ctx) : 
-	runtime(ctx, runtime_options()){}
+runtime::runtime(const runtime::context& ctx) :
+	runtime(ctx, runtime_options()) {}
 
-runtime::runtime(const runtime::context& ctx, const runtime_options& options){
+runtime::runtime(const runtime::context& ctx, const runtime_options& options) {
 	m_timer_queue = std::make_shared<::concurrencpp::timer_queue>();
 
 	m_inline_executor = std::make_shared<::concurrencpp::inline_executor>(inline_executor::context());
@@ -67,14 +67,14 @@ runtime::runtime(const runtime::context& ctx, const runtime_options& options){
 	thread_pool_executor_ctx.max_worker_count = options.max_cpu_threads;
 
 	m_thread_pool_executor = std::make_shared<::concurrencpp::thread_pool_executor>(thread_pool_executor_ctx);
-	
+
 	background_executor::context background_executor_ctx;
 	background_executor_ctx.cancellation_msg = details::consts::k_background_executor_cancel_error_msg;
 	background_executor_ctx.max_waiting_time = options.max_background_thread_waiting_time;
 	background_executor_ctx.max_worker_count = options.max_background_threads;
 
 	m_background_executor = std::make_shared<::concurrencpp::background_executor>(background_executor_ctx);
-	
+
 	m_thread_executor = std::make_shared<::concurrencpp::thread_executor>(thread_executor::context());
 }
 
@@ -108,7 +108,7 @@ std::shared_ptr<concurrencpp::manual_executor> concurrencpp::runtime::manual_exe
 	return std::make_shared<concurrencpp::manual_executor>(manual_executor::context{});
 }
 
-std::tuple<unsigned int, unsigned int, unsigned int> concurrencpp::runtime::version() noexcept{
+std::tuple<unsigned int, unsigned int, unsigned int> concurrencpp::runtime::version() noexcept {
 	return {
 		details::consts::k_concurrencpp_version_major,
 		details::consts::k_concurrencpp_version_minor,

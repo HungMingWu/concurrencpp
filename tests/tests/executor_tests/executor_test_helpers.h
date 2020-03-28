@@ -12,10 +12,10 @@ namespace concurrencpp::tests {
 		std::exception_ptr& m_dest;
 
 	public:
-		cancellation_tester(std::exception_ptr& dest) noexcept: m_dest(dest){}
+		cancellation_tester(std::exception_ptr& dest) noexcept : m_dest(dest) {}
 		cancellation_tester(cancellation_tester&&) noexcept = default;
 
-		void operator()(){}
+		void operator()() {}
 
 		void cancel(std::exception_ptr reason) noexcept {
 			m_dest = reason;

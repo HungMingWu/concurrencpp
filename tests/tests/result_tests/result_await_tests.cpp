@@ -92,7 +92,7 @@ result<void> concurrencpp::tests::test_result_await_ready_val() {
 
 	assert_false(static_cast<bool>(result));
 	assert_same(thread_id_0, thread_id_1);
-	assert_smaller_equal(elapsed_time , 10);
+	assert_smaller_equal(elapsed_time, 10);
 	test_ready_result_result(std::move(done_result));
 }
 
@@ -121,7 +121,7 @@ result<void> concurrencpp::tests::test_result_await_ready_err() {
 
 	assert_false(static_cast<bool>(result));
 	assert_same(thread_id_0, thread_id_1);
-	assert_smaller_equal(elapsed_time , 10);
+	assert_smaller_equal(elapsed_time, 10);
 	test_ready_result_costume_exception(std::move(done_result), id);
 }
 
@@ -215,7 +215,7 @@ result<void> concurrencpp::tests::test_result_await_via_ready_val() {
 
 	assert_false(static_cast<bool>(result));
 	assert_same(thread_id_0, thread_id_1);
-	assert_smaller_equal(elapsed_time , 10);
+	assert_smaller_equal(elapsed_time, 10);
 	assert_false(executor->scheduled_async());
 	test_ready_result_result(std::move(done_result));
 }
@@ -243,7 +243,7 @@ result<void> concurrencpp::tests::test_result_await_via_ready_err() {
 
 	assert_false(static_cast<bool>(result));
 	assert_same(thread_id_0, thread_id_1);
-	assert_smaller_equal(elapsed_time , 10);
+	assert_smaller_equal(elapsed_time, 10);
 	assert_false(executor->scheduled_async());
 	test_ready_result_costume_exception(std::move(done_result), id);
 }

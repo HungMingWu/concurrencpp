@@ -14,7 +14,7 @@ namespace mock_web_socket {
 		return 0;
 	}();
 
-	bool failed() noexcept {		
+	bool failed() noexcept {
 		const auto randomized_num = std::rand() % 100;
 		return randomized_num <= 5;
 	}
@@ -38,7 +38,7 @@ namespace mock_web_socket {
 	};
 }
 
-void mock_web_socket::web_socket::open(std::string_view url){
+void mock_web_socket::web_socket::open(std::string_view url) {
 	if (failed()) {
 		throw std::runtime_error("web_socket::open - can't connect.");
 	}
@@ -46,7 +46,7 @@ void mock_web_socket::web_socket::open(std::string_view url){
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 }
 
-std::string mock_web_socket::web_socket::receive_msg(){
+std::string mock_web_socket::web_socket::receive_msg() {
 	const auto time_to_sleep = random_in_range(2, 8);
 	std::this_thread::sleep_for(std::chrono::seconds(time_to_sleep));
 

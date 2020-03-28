@@ -14,7 +14,7 @@ namespace mock_async_sql {
 
 	struct connection_callback_base {
 		virtual ~connection_callback_base() noexcept = default;
-		
+
 		virtual void on_connection(std::exception_ptr, std::shared_ptr<db_connection>) = 0;
 	};
 
@@ -27,7 +27,7 @@ namespace mock_async_sql {
 			std::vector<std::vector<std::any>>) = 0;
 	};
 
-	class db_connection : public std::enable_shared_from_this<db_connection>{
+	class db_connection : public std::enable_shared_from_this<db_connection> {
 
 	public:
 		db_connection(std::string db_url, std::string username, std::string password) {}

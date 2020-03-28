@@ -14,17 +14,26 @@ namespace concurrencpp::details {
 
 	private:
 		std::mutex m_lock;
-		std::condition_variable m_condition;
 		array_deque<task> m_tasks;
+		std::condition_variable m_push_condition;
+		std::condition_variable m_pop_condition;
 		std::thread m_thread;
+		const std::string m_cancellation_error_msg;
+		bool m_cancelled;
+
+		void join();
+		void cancel_all_tasks();
 
 		void work_loop() noexcept;
 
 	public:
-		single_worker_thread();
+		single_worker_thread(std::string_view cancellation_error_msg);
 		~single_worker_thread() noexcept;
 
 		void enqueue(task task);
+
+		void wait_all();
+		bool wait_all(std::chrono::milliseconds ms);
 	};
 }
 

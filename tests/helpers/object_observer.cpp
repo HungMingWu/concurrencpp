@@ -106,7 +106,7 @@ bool object_observer::wait_destruction_count(size_t count, std::chrono::seconds 
 	return m_state->wait_destruction_count(count, timeout);
 }
 
-bool concurrencpp::tests::object_observer::wait_cancel_count(size_t count, std::chrono::seconds timeout){
+bool concurrencpp::tests::object_observer::wait_cancel_count(size_t count, std::chrono::seconds timeout) {
 	return m_state->wait_cancel_count(count, timeout);
 }
 

@@ -252,7 +252,7 @@ void concurrencpp::tests::test_task_move_constructor() {
 	int(*task_pointer)() = &g_test_function;
 	task base_task_2(task_pointer);
 	task task_from_function_pointer(std::move(base_task_2));
-	
+
 	assert_false(static_cast<bool>(base_task_2));
 	assert_true(static_cast<bool>(task_from_function_pointer));
 	assert_true(task_from_function_pointer.uses_sbo());
@@ -278,7 +278,7 @@ void concurrencpp::tests::test_task_move_constructor() {
 	test_functor<8> small_functor;
 	task base_task_4(small_functor);
 	task task_from_small_functor(std::move(base_task_4));
-	
+
 	assert_false(static_cast<bool>(base_task_4));
 	assert_true(static_cast<bool>(task_from_small_functor));
 	assert_true(task_from_small_functor.uses_sbo());
@@ -483,7 +483,7 @@ void concurrencpp::tests::test_task_call_operator_test_3() {
 		e = d;
 	};
 
-	task t(concurrencpp::details::bind(lambda, std::ref(a), &b, c,  d, std::ref(e)));
+	task t(concurrencpp::details::bind(lambda, std::ref(a), &b, c, d, std::ref(e)));
 	t();
 
 	assert_true(a);

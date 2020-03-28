@@ -14,7 +14,7 @@ namespace mock_process_monitor {
 
 	public:
 		monitor() noexcept;
-		
+
 		size_t cpu_usage() noexcept;
 		size_t memory_usage() noexcept;
 		size_t thread_count() noexcept;

@@ -18,7 +18,7 @@ namespace concurrencpp::tests {
 	void test_manual_executor_cancel_all_test_0();
 	void test_manual_executor_cancel_all_test_1();
 	void test_manual_executor_cancel_all();
-	
+
 	void test_manual_executor_wait_for_task_untimed();
 	void test_manual_executor_wait_for_task_timed();
 	void test_manual_executor_wait_for_task();
@@ -35,7 +35,7 @@ void concurrencpp::tests::test_manual_executor_name() {
 
 void concurrencpp::tests::test_manual_executor_enqueue() {
 	object_observer observer;
-	const size_t count = 1'000;	
+	const size_t count = 1'000;
 	auto executor = concurrencpp::make_runtime()->manual_executor();
 
 	assert_same(executor->size(), 0);
@@ -78,11 +78,11 @@ void concurrencpp::tests::test_manual_executor_loop_once() {
 
 	assert_same(observer.get_execution_count(), count);
 	assert_same(observer.get_destruction_count(), count);
-	
+
 	auto execution_map = observer.get_execution_map();
 
 	assert_same(execution_map.size(), 1);
-	assert_same(execution_map.begin()->first , std::this_thread::get_id());
+	assert_same(execution_map.begin()->first, std::this_thread::get_id());
 	assert_same(execution_map.begin()->second, count);
 }
 
@@ -136,17 +136,17 @@ void concurrencpp::tests::test_manual_executor_cancel_all_test_0() {
 		std::exception_ptr& m_dest;
 
 	public:
-		dummy_task(std::exception_ptr& dest) noexcept : m_dest(dest){}
+		dummy_task(std::exception_ptr& dest) noexcept : m_dest(dest) {}
 		dummy_task(dummy_task&&) noexcept = default;
 
 		void operator()() noexcept {}
 
-		void cancel(std::exception_ptr reason) noexcept { m_dest = reason;  }
+		void cancel(std::exception_ptr reason) noexcept { m_dest = reason; }
 	};
 
 	std::exception_ptr exception;
 	auto executor = concurrencpp::make_runtime()->manual_executor();
-	
+
 	executor->enqueue(dummy_task{ exception });
 	executor->cancel_all(std::make_exception_ptr(std::runtime_error("error.")));
 
@@ -189,12 +189,12 @@ void concurrencpp::tests::test_manual_executor_wait_for_task_untimed() {
 	auto enqueuing_time = std::chrono::system_clock::now() + std::chrono::milliseconds(2'500);
 
 	std::thread enqueuing_thread([executor, enqueuing_time]() mutable {
-		std::this_thread::sleep_until(enqueuing_time);	
+		std::this_thread::sleep_until(enqueuing_time);
 		executor->enqueue([] {});
 	});
 
 	executor->wait_for_task();
-	assert_bigger_equal(std::chrono::system_clock::now() , enqueuing_time);
+	assert_bigger_equal(std::chrono::system_clock::now(), enqueuing_time);
 
 	enqueuing_thread.join();
 }
@@ -210,7 +210,7 @@ void concurrencpp::tests::test_manual_executor_wait_for_task_timed() {
 		const auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(after - before);
 
 		assert_false(task_found);
-		assert_bigger_equal(time_elapsed , waiting_time);
+		assert_bigger_equal(time_elapsed, waiting_time);
 	}
 
 	auto enqueuing_time = std::chrono::system_clock::now() + std::chrono::milliseconds(2'500);
@@ -222,7 +222,7 @@ void concurrencpp::tests::test_manual_executor_wait_for_task_timed() {
 
 	const auto task_found = executor->wait_for_task(std::chrono::seconds(10));
 	assert_true(task_found);
-	assert_bigger_equal(std::chrono::system_clock::now() , enqueuing_time);
+	assert_bigger_equal(std::chrono::system_clock::now(), enqueuing_time);
 
 	enqueuing_thread.join();
 }

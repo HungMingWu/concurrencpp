@@ -21,7 +21,7 @@ namespace concurrencpp::details {
 		template<class given_functor_type>
 		task_with_result(result_promise<return_type> promise, given_functor_type&& functor) :
 			m_promise(std::move(promise)),
-			m_functor(std::forward<given_functor_type>(functor)){}
+			m_functor(std::forward<given_functor_type>(functor)) {}
 
 		task_with_result(task_with_result&&) noexcept(intmc) = default;
 

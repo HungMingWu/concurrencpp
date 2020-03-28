@@ -26,7 +26,7 @@ namespace concurrencpp::details {
 
 		awaitable_base() noexcept = default;
 		awaitable_base(awaitable_base&&) noexcept = default;
-		
+
 		awaitable_base(
 			result_state_ptr<type> state_ptr,
 			std::shared_ptr<concurrencpp::executor> executor,
@@ -48,7 +48,7 @@ namespace concurrencpp::details {
 
 namespace concurrencpp {
 	template<class type>
-	struct result_awaitable : public details::awaitable_base<type> {		
+	struct result_awaitable : public details::awaitable_base<type> {
 		result_awaitable() noexcept = default;
 		result_awaitable(result_awaitable&&) noexcept = default;
 

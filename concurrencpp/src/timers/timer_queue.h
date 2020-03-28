@@ -14,7 +14,7 @@
 #include <cassert>
 
 namespace concurrencpp {
-	class timer_queue : public std::enable_shared_from_this<timer_queue>{
+	class timer_queue : public std::enable_shared_from_this<timer_queue> {
 
 		using clock_type = std::chrono::high_resolution_clock;
 		using time_point = std::chrono::time_point<std::chrono::high_resolution_clock>;
@@ -40,10 +40,10 @@ namespace concurrencpp {
 
 		void ensure_worker_thread(std::unique_lock<std::mutex>& lock);
 		void register_timer(std::unique_lock<std::mutex>& lock, timer_ptr new_timer);
-		
+
 		void remove_timer_impl(timer_ptr existing_timer);
 		void remove_timer(timer_ptr existing_timer);
-	
+
 		time_point process_timers();
 
 		template<class given_functor_type>
@@ -60,13 +60,13 @@ namespace concurrencpp {
 				std::move(executor),
 				weak_from_this(),
 				std::forward<given_functor_type>(functor));
-		
+
 			std::unique_lock<std::mutex> lock(m_lock);
 			ensure_worker_thread(lock);
 			register_timer(lock, timer_core);
 			return timer_core;
 		}
-	
+
 		void work_loop() noexcept;
 
 	public:

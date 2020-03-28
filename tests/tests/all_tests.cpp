@@ -1,18 +1,20 @@
 #include "all_tests.h"
 
 void concurrencpp::tests::test_all() {
-	test_array_deque();
-	test_spin_lock();
-	test_task();
-	
-	test_thread_group();
+	//test_array_deque();
+	//test_spin_lock();
+	//test_task();
+
 	test_thread_pool();
+	test_single_worker_thread();
+	test_thread_group();
+	test_manual_worker();
 
 	test_result();
 	test_result_resolve_all();
-	test_result_await_all();	
+	test_result_await_all();
 	test_result_promise();
-	
+
 	test_inline_executor();
 	test_thread_pool_executor();
 	test_background_executor();

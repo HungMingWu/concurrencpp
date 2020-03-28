@@ -78,8 +78,8 @@ namespace concurrencpp::tests {
 			bool m_unblocked;
 
 		public:
-			waiter_impl() : m_unblocked(false){}
-			
+			waiter_impl() : m_unblocked(false) {}
+
 			~waiter_impl() {
 				notify_all();
 			}

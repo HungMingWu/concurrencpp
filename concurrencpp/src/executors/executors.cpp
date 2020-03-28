@@ -36,8 +36,8 @@ void inline_executor::enqueue(task task) {
 	thread_pool_executor
 */
 
-thread_pool_executor::thread_pool_executor(const thread_pool_executor::context& ctx) : 
-	m_cpu_thread_pool(ctx.max_worker_count, ctx.max_waiting_time, ctx.cancellation_msg, nullptr){}
+thread_pool_executor::thread_pool_executor(const thread_pool_executor::context& ctx) :
+	m_cpu_thread_pool(ctx.max_worker_count, ctx.max_waiting_time, ctx.cancellation_msg, nullptr) {}
 
 std::string_view thread_pool_executor::name() const noexcept {
 	return details::consts::k_thread_pool_executor_name;
@@ -66,8 +66,8 @@ void background_executor::enqueue(task task) {
 	thread_executor
 */
 
-thread_executor::thread_executor(const thread_executor::context&) noexcept : 
-	m_thread_group(nullptr){}
+thread_executor::thread_executor(const thread_executor::context&) noexcept :
+	m_thread_group(nullptr) {}
 
 std::string_view thread_executor::name() const noexcept {
 	return details::consts::k_thread_executor_name;
@@ -81,7 +81,8 @@ void thread_executor::enqueue(task task) {
 	worker_thread_executor
 */
 
-worker_thread_executor::worker_thread_executor(const worker_thread_executor::context&){}
+worker_thread_executor::worker_thread_executor(const worker_thread_executor::context&) :
+	m_worker(details::consts::k_worker_thread_executor_cancel_error_msg) {}
 
 std::string_view worker_thread_executor::name() const noexcept {
 	return details::consts::k_worker_thread_executor_name;
@@ -95,89 +96,41 @@ void worker_thread_executor::enqueue(task task) {
 	manual_executor
 */
 
-manual_executor::manual_executor(const manual_executor::context&){}
-
-manual_executor::~manual_executor() noexcept {
-	concurrencpp::errors::broken_task error(details::consts::k_manual_executor_cancel_error_msg);
-	const auto exception_ptr = std::make_exception_ptr(error);
-
-	std::unique_lock<decltype(m_lock)> lock(m_lock);
-	for (auto& task : m_tasks) {
-		task.cancel(exception_ptr);
-	}
-}
+manual_executor::manual_executor(const manual_executor::context&) :
+	m_worker(details::consts::k_manual_executor_cancel_error_msg) {}
 
 std::string_view manual_executor::name() const noexcept {
 	return details::consts::k_manual_executor_name;
 }
 
 void manual_executor::enqueue(task task) {
-	std::unique_lock<decltype(m_lock)> lock(m_lock);
-	m_tasks.emplace_back(std::move(task));
-
-	lock.unlock();
-	m_condition.notify_all();
+	m_worker.enqueue(std::move(task));
 }
 
 size_t manual_executor::size() const noexcept {
-	std::unique_lock<decltype(m_lock)> lock(m_lock);
-	return m_tasks.size();
+	return m_worker.size();
 }
 
 bool manual_executor::empty() const noexcept {
-	return size() == 0;
+	return m_worker.empty();
 }
 
 bool manual_executor::loop_once() {
-	task task;
-	
-	std::unique_lock<decltype(m_lock)> lock(m_lock);
-	if (m_tasks.empty()) {
-		return false;
-	}
-
-	task = m_tasks.pop_front();
-	lock.unlock();
-
-	task();
-	return true;
+	return m_worker.loop_once();
 }
 
 size_t manual_executor::loop(size_t counts) {
-	size_t executed = 0;
-	for ( ; executed < counts ;  ++executed) {
-		if (!loop_once()) {
-			break;
-		}
-	}
-
-	return executed;
+	return m_worker.loop(counts);
 }
 
 void manual_executor::cancel_all(std::exception_ptr reason) {
-	std::unique_lock<decltype(m_lock)> lock(m_lock);
-	for (auto& task : m_tasks) {
-		task.cancel(reason);
-	}
-
-	m_tasks.clear();
+	m_worker.cancel_all(reason);
 }
 
 void manual_executor::wait_for_task() {
-	std::unique_lock<decltype(m_lock)> lock(m_lock);
-	if (!m_tasks.empty()) {
-		return;
-	}
-
-	m_condition.wait(lock, [this] { return !m_tasks.empty(); });
-	assert(!m_tasks.empty());
+	m_worker.wait_for_task();
 }
 
 bool manual_executor::wait_for_task(std::chrono::milliseconds max_waiting_time) {
-	std::unique_lock<decltype(m_lock)> lock(m_lock);
-	if (!m_tasks.empty()) {
-		return false;
-	}
-
-	return m_condition.wait_for(lock, max_waiting_time, [this] { return !m_tasks.empty(); });
+	return m_worker.wait_for_task(max_waiting_time);
 }

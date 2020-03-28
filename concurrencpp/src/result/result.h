@@ -150,7 +150,7 @@ namespace concurrencpp {
 		void set_result(argument_types&& ... arguments) {
 			throw_if_empty("result_promise::set_result() - result_promise is empty.");
 
-			constexpr auto is_constructible = 
+			constexpr auto is_constructible =
 				std::is_constructible_v<type, argument_types...> || std::is_same_v<void, type>;
 			static_assert(is_constructible,
 				"result_promise::set_result() - <<type>> is not constructible from <<args...>>");

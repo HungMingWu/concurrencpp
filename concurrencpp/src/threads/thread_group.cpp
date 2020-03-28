@@ -20,7 +20,7 @@ namespace concurrencpp::details {
 		~thread_group_worker() noexcept;
 
 		std::thread::id get_id() const noexcept;
-		void start(std::list<thread_group_worker>::iterator self_it);
+		std::thread::id start(std::list<thread_group_worker>::iterator self_it);
 	};
 }
 
@@ -49,32 +49,44 @@ std::thread::id thread_group_worker::get_id() const noexcept {
 	return m_thread.get_id();
 }
 
-void thread_group_worker::start(std::list<thread_group_worker>::iterator self_it) {
+std::thread::id thread_group_worker::start(std::list<thread_group_worker>::iterator self_it) {
 	m_self_it = self_it;
 	m_thread = std::thread([this] { execute_and_retire(); });
+	return m_thread.get_id();
 }
 
 thread_group::thread_group(listener_ptr listener) :
-	m_listener(std::move(listener)){}
+	m_listener(std::move(listener)) {}
 
 thread_group::~thread_group() noexcept {
-	std::unique_lock<decltype(m_lock)> lock(m_lock);
-	m_condition.wait(lock, [this] { return m_workers.empty(); });
+	wait_all();
 
 	assert(m_workers.empty());
 	clear_last_retired(std::move(m_last_retired));
 }
 
-void thread_group::enqueue(task callable) {
+std::thread::id thread_group::enqueue(task callable) {
 	std::unique_lock<decltype(m_lock)> lock(m_lock);
 	auto& new_worker = m_workers.emplace_back(callable, *this);
 	auto worker_it = std::prev(m_workers.end());
-	new_worker.start(worker_it);
+	const auto id = new_worker.start(worker_it);
 
 	const auto& listener = get_listener();
 	if (static_cast<bool>(listener)) {
-		listener->on_thread_created(new_worker.get_id());
+		listener->on_thread_created(id);
 	}
+
+	return id;
+}
+
+void concurrencpp::details::thread_group::wait_all() {
+	std::unique_lock<decltype(m_lock)> lock(m_lock);
+	m_condition.wait(lock, [this] { return m_workers.empty(); });
+}
+
+bool concurrencpp::details::thread_group::wait_all(std::chrono::milliseconds ms) {
+	std::unique_lock<decltype(m_lock)> lock(m_lock);
+	return m_condition.wait_for(lock, ms, [this] { return m_workers.empty(); });
 }
 
 const listener_ptr& thread_group::get_listener() const noexcept {
@@ -86,11 +98,11 @@ void thread_group::clear_last_retired(std::list<thread_group_worker> last_retire
 		return;
 	}
 
-	assert(last_retired.size() == 1);	
+	assert(last_retired.size() == 1);
 	const auto thread_id = last_retired.front().get_id();
-	
+
 	last_retired.clear();
-	
+
 	const auto& listener = get_listener();
 	if (static_cast<bool>(listener)) {
 		listener->on_thread_destroyed(thread_id);
@@ -105,7 +117,7 @@ void thread_group::retire_worker(std::list<thread_group_worker>::iterator it) {
 	last_retired = std::move(m_last_retired);
 	m_last_retired.splice(m_last_retired.begin(), m_workers, it);
 
-	lock.unlock();	
+	lock.unlock();
 	m_condition.notify_one();
 
 	const auto& listener = get_listener();

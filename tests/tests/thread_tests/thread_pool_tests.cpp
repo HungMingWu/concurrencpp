@@ -21,7 +21,7 @@ namespace concurrencpp::tests {
 	void test_thread_pool_enqueue_case_1();
 	void test_thread_pool_enqueue_case_1_not_tp_thread();
 	void test_thread_pool_enqueue_case_1_task_queue_not_empty();
-	
+
 	void test_thread_pool_enqueue_case_2();
 	void test_thread_pool_enqueue_case_2_tp_thread();
 
@@ -35,10 +35,15 @@ namespace concurrencpp::tests {
 	void test_thread_pool_dynamic_resizing();
 	void test_thread_pool_work_stealing();
 
+	void test_thread_pool_destructor_cancellation_test_0();
+	void test_thread_pool_destructor_cancellation_test_1();
 	void test_thread_pool_destructor_cancellation();
 	void test_thread_pool_destructor_pending_tasks();
 	void test_thread_pool_destructor_joining_threads();
 	void test_thread_pool_destructor();
+
+	void test_thread_pool_wait_all();
+	void test_thread_pool_timed_wait_all();
 
 	void test_thread_pool_combo();
 }
@@ -97,7 +102,7 @@ void concurrencpp::tests::test_thread_pool_enqueue_case_2() {
 	*/
 	waiter waiter;
 	thread_pool pool(4, seconds(20), "", nullptr);
-		
+
 	for (size_t i = 0; i < 2; i++) {
 		pool.enqueue([waiter]() mutable {
 			waiter.wait();
@@ -153,21 +158,21 @@ void concurrencpp::tests::test_thread_pool_enqueue_case_2_tp_thread() {
 
 	pool.enqueue([
 		&pool,
-		running_thread_0 = running_threads[0],
-		running_thread_1 = running_threads[1],
-		tested_thread_0 = tested_threads[0],
-		tested_thread_1 = tested_threads[1]
-	]() mutable {	
-		const auto this_thread = pool.enqueue([] {});
-		assert_same(this_thread, std::this_thread::get_id());
-		assert_true(this_thread == tested_thread_0 || this_thread == tested_thread_1);
-		assert_false(this_thread == running_thread_0 || this_thread == running_thread_1);
+			running_thread_0 = running_threads[0],
+			running_thread_1 = running_threads[1],
+			tested_thread_0 = tested_threads[0],
+			tested_thread_1 = tested_threads[1]
+	]() mutable {
+			const auto this_thread = pool.enqueue([] {});
+			assert_same(this_thread, std::this_thread::get_id());
+			assert_true(this_thread == tested_thread_0 || this_thread == tested_thread_1);
+			assert_false(this_thread == running_thread_0 || this_thread == running_thread_1);
 
-		const auto waiting_thread = pool.enqueue([] {});
-		assert_not_same(waiting_thread, this_thread);
-		assert_true(waiting_thread == tested_thread_0 || waiting_thread == tested_thread_1);
-		assert_false(waiting_thread == running_thread_0 || waiting_thread == running_thread_1);
-	});
+			const auto waiting_thread = pool.enqueue([] {});
+			assert_not_same(waiting_thread, this_thread);
+			assert_true(waiting_thread == tested_thread_0 || waiting_thread == tested_thread_1);
+			assert_false(waiting_thread == running_thread_0 || waiting_thread == running_thread_1);
+		});
 
 	std::this_thread::sleep_for(seconds(2));
 	waiter.notify_all();
@@ -175,7 +180,7 @@ void concurrencpp::tests::test_thread_pool_enqueue_case_2_tp_thread() {
 
 void concurrencpp::tests::test_thread_pool_enqueue_case_3() {
 	/*
-		Case 3: if case 2 is false and this thread is a thread pool thread 
+		Case 3: if case 2 is false and this thread is a thread pool thread
 				then enqueue to this thread
 	*/
 
@@ -226,14 +231,14 @@ void concurrencpp::tests::test_thread_pool_enqueue_case_4() {
 	for (const auto pair : enqueueing_map) {
 		assert_same(pair.second, task_count / thread_count);
 	}
-	
+
 	waiter.notify_all();
 }
 void concurrencpp::tests::test_thread_pool_enqueue() {
 	test_thread_pool_enqueue_case_1();
 	test_thread_pool_enqueue_case_1_not_tp_thread();
 	test_thread_pool_enqueue_case_1_task_queue_not_empty();
-	
+
 	test_thread_pool_enqueue_case_2();
 	test_thread_pool_enqueue_case_2_tp_thread();
 
@@ -243,7 +248,7 @@ void concurrencpp::tests::test_thread_pool_enqueue() {
 
 void concurrencpp::tests::test_thread_pool_destructor_pending_tasks() {
 	waiter waiter;
-	object_observer observer;	
+	object_observer observer;
 	auto pool = std::make_unique<thread_pool>(1, minutes(1), "", nullptr);
 
 	pool->enqueue([waiter]() mutable {
@@ -262,20 +267,51 @@ void concurrencpp::tests::test_thread_pool_destructor_pending_tasks() {
 	assert_same(observer.get_destruction_count(), 100);
 }
 
-void concurrencpp::tests::test_thread_pool_destructor_cancellation() {
+
+void concurrencpp::tests::test_thread_pool_destructor_cancellation_test_0() {
+	const auto task_count = 1'024;
+	object_observer observer;
+
+	{
+		thread_pool pool(4, seconds(10), "", nullptr);
+		waiter waiter;
+
+		for (size_t i = 0; i < 4; i++) {
+			pool.enqueue([waiter]() mutable {
+				waiter.wait();
+			});
+		}
+
+		for (size_t i = 0; i < task_count; i++) {
+			pool.enqueue(observer.get_testing_stub());
+		}
+
+		waiter.notify_all();
+	}
+
+	assert_true(observer.wait_cancel_count(task_count, seconds(20)));
+	assert_true(observer.wait_destruction_count(task_count, seconds(20)));
+}
+
+void concurrencpp::tests::test_thread_pool_destructor_cancellation_test_1() {
 	std::exception_ptr exception_ptr;
 	const auto error_msg = concurrencpp::details::consts::k_thread_pool_executor_cancel_error_msg;
 
 	{
 		thread_pool pool(1, minutes(1), error_msg, nullptr);
 		pool.enqueue([] {
-			std::this_thread::sleep_for(std::chrono::seconds(2));
+			std::this_thread::sleep_for(std::chrono::seconds(1));
 		});
 
 		pool.enqueue(cancellation_tester(exception_ptr));
 	}
 
 	assert_cancelled_correctly<concurrencpp::errors::broken_task>(exception_ptr, error_msg);
+}
+
+void concurrencpp::tests::test_thread_pool_destructor_cancellation() {
+	test_thread_pool_destructor_cancellation_test_0();
+	test_thread_pool_destructor_cancellation_test_1();
 }
 
 void concurrencpp::tests::test_thread_pool_destructor_joining_threads() {
@@ -307,6 +343,75 @@ void concurrencpp::tests::test_thread_pool_destructor() {
 	test_thread_pool_destructor_joining_threads();
 }
 
+void concurrencpp::tests::test_thread_pool_wait_all() {
+	thread_pool pool(10, seconds(1), "", nullptr);
+
+	//if no tasks are in the pool, return immediately
+	{
+		const auto deadline = high_resolution_clock::now() + milliseconds(10);
+		pool.wait_all();
+		assert_smaller_equal(high_resolution_clock::now(), deadline);
+	}
+
+	object_observer observer;
+	waiter waiter;
+	const auto task_count = 1'024;
+
+	for (size_t i = 0; i < task_count; i++) {
+		pool.enqueue(observer.get_testing_stub());
+	}
+
+	pool.enqueue([waiter]() mutable {
+		waiter.wait();
+	});
+
+	const auto later = high_resolution_clock::now() + seconds(2);
+	std::thread unblocker([later, waiter]() mutable {
+		std::this_thread::sleep_until(later);
+		waiter.notify_all();
+	});
+
+	pool.wait_all();
+
+	assert_same(observer.get_execution_count(), task_count);
+	assert_bigger_equal(high_resolution_clock::now(), later);
+
+	unblocker.join();
+}
+
+void concurrencpp::tests::test_thread_pool_timed_wait_all() {
+	thread_pool pool(10, seconds(1), "", nullptr);
+
+	//if no tasks are in the pool, return immediately
+	{
+		const auto deadline = high_resolution_clock::now() + milliseconds(10);
+		pool.wait_all(std::chrono::milliseconds(100));
+		assert_smaller_equal(high_resolution_clock::now(), deadline);
+	}
+
+	object_observer observer;
+	waiter waiter;
+	const auto task_count = 1'024;
+
+	for (size_t i = 0; i < task_count; i++) {
+		pool.enqueue(observer.get_testing_stub());
+	}
+
+	pool.enqueue([waiter]() mutable {
+		waiter.wait();
+		std::this_thread::sleep_for(milliseconds(150));
+	});
+
+	for (size_t i = 0; i < 5; i++) {
+		assert_false(pool.wait_all(milliseconds(100)));
+	}
+
+	waiter.notify_all();
+
+	assert_true(pool.wait_all(seconds(10)));
+	assert_same(observer.get_execution_count(), task_count);
+}
+
 void concurrencpp::tests::test_thread_pool_dynamic_resizing_test_1() {
 	auto listener = make_test_listener();
 	auto pool = std::make_unique<thread_pool>(1, seconds(8), "", listener);
@@ -331,7 +436,7 @@ void concurrencpp::tests::test_thread_pool_dynamic_resizing_test_1() {
 	assert_same(listener->total_created(), 2); //one thread was created and went idle. another one was created instead.
 
 	pool.reset();
-	assert_same(listener->total_destroyed(), 2); 
+	assert_same(listener->total_destroyed(), 2);
 }
 
 void concurrencpp::tests::test_thread_pool_dynamic_resizing_test_2() {
@@ -362,7 +467,7 @@ void concurrencpp::tests::test_thread_pool_dynamic_resizing_test_2() {
 	assert_same(listener->total_destroyed(), 10);
 }
 
-void concurrencpp::tests::test_thread_pool_dynamic_resizing() {	
+void concurrencpp::tests::test_thread_pool_dynamic_resizing() {
 	test_thread_pool_dynamic_resizing_test_1();
 	test_thread_pool_dynamic_resizing_test_2();
 }
@@ -374,8 +479,8 @@ void concurrencpp::tests::test_thread_pool_work_stealing() {
 	thread_pool pool(4, seconds(20), "", listener);
 
 	for (size_t i = 0; i < 3; i++) {
-		pool.enqueue([waiter]() mutable { 
-			waiter.wait(); 
+		pool.enqueue([waiter]() mutable {
+			waiter.wait();
 		});
 	}
 
@@ -398,9 +503,9 @@ void concurrencpp::tests::test_thread_pool_combo() {
 	auto listener = make_test_listener();
 	object_observer observer;
 	random randomizer;
-	size_t expected_count = 0;	
-	auto pool = std::make_unique<thread_pool>(32, seconds(4),"", listener);
-	
+	size_t expected_count = 0;
+	auto pool = std::make_unique<thread_pool>(32, seconds(4), "", listener);
+
 	for (size_t i = 0; i < 50; i++) {
 		const auto task_count = static_cast<size_t>(randomizer(0, 1'500));
 
@@ -427,11 +532,13 @@ void concurrencpp::tests::test_thread_pool_combo() {
 void concurrencpp::tests::test_thread_pool() {
 	tester tester("thread_pool test");
 
-	tester.add_step("enqueue", test_thread_pool_enqueue);
-	tester.add_step("thread pool work stealing", test_thread_pool_work_stealing);
-	tester.add_step("threadpool auto resizing", test_thread_pool_dynamic_resizing); 
-	tester.add_step("threadpool combo", test_thread_pool_combo);
 	tester.add_step("~thread_pool", test_thread_pool_destructor);
+	tester.add_step("enqueue", test_thread_pool_enqueue);
+	tester.add_step("wait_all", test_thread_pool_wait_all);
+	tester.add_step("wait_all(ms)", test_thread_pool_timed_wait_all);
+	tester.add_step("thread pool work stealing", test_thread_pool_work_stealing);
+	tester.add_step("threadpool auto resizing", test_thread_pool_dynamic_resizing);
+	tester.add_step("threadpool combo", test_thread_pool_combo);
 
 	tester.launch_test();
 }

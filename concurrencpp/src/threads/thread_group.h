@@ -19,10 +19,10 @@ namespace concurrencpp::details {
 	private:
 		std::mutex m_lock;
 		std::list<thread_group_worker> m_workers;
-		std::shared_ptr<thread_pool_listener_base> m_listener;
 		std::condition_variable m_condition;
+		const std::shared_ptr<thread_pool_listener_base> m_listener;
 		std::list<thread_group_worker> m_last_retired;
-		
+
 		void enqueue_worker(task& callable);
 		void clear_last_retired(std::list<thread_group_worker> last_retired);
 
@@ -30,8 +30,11 @@ namespace concurrencpp::details {
 		thread_group(std::shared_ptr<thread_pool_listener_base> listener_ptr);
 		~thread_group() noexcept;
 
-		void enqueue(task task);
-		
+		std::thread::id enqueue(task task);
+
+		void wait_all();
+		bool wait_all(std::chrono::milliseconds ms);
+
 		void retire_worker(std::list<thread_group_worker>::iterator it);
 		const std::shared_ptr<thread_pool_listener_base>& get_listener() const noexcept;
 	};

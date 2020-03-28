@@ -7,23 +7,23 @@
 #include "../threads/thread_pool.h"
 #include "../threads/thread_group.h"
 #include "../threads/single_worker_thread.h"
+#include "../threads/manual_worker.h"
 
 #include <memory>
-#include <thread>
 #include <string_view>
 #include <type_traits>
 
 namespace concurrencpp {
 	class inline_executor final : public executor {
-		
+
 		friend class ::concurrencpp::runtime;
 
 		struct context {};
 
-	public:		
+	public:
 		inline_executor(const inline_executor::context&) noexcept;
 
-		virtual std::string_view name() const noexcept;	
+		virtual std::string_view name() const noexcept;
 		virtual void enqueue(task task);
 	};
 
@@ -39,7 +39,7 @@ namespace concurrencpp {
 
 	private:
 		details::thread_pool m_cpu_thread_pool;
-	
+
 	public:
 		thread_pool_executor(const thread_pool_executor::context&);
 
@@ -60,7 +60,7 @@ namespace concurrencpp {
 
 	private:
 		details::thread_pool m_background_thread_pool;
-	
+
 	public:
 		background_executor(const background_executor::context&);
 
@@ -93,9 +93,9 @@ namespace concurrencpp {
 
 		struct context {};
 
-	public:	
+	public:
 		worker_thread_executor(const worker_thread_executor::context&);
-	
+
 		virtual std::string_view name() const noexcept;
 		virtual void enqueue(task task);
 	};
@@ -107,13 +107,10 @@ namespace concurrencpp {
 		struct context {};
 
 	private:
-		mutable std::mutex m_lock;
-		details::array_deque<task> m_tasks;
-		std::condition_variable m_condition;
+		details::manual_worker m_worker;
 
 	public:
 		manual_executor(const manual_executor::context&);
-		~manual_executor() noexcept;
 
 		virtual std::string_view name() const noexcept;
 		virtual void enqueue(task task);
@@ -125,7 +122,7 @@ namespace concurrencpp {
 		size_t loop(size_t counts);
 
 		void cancel_all(std::exception_ptr reason);
-		
+
 		void wait_for_task();
 		bool wait_for_task(std::chrono::milliseconds max_waiting_time);
 	};

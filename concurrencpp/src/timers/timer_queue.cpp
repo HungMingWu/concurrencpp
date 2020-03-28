@@ -11,9 +11,9 @@ using concurrencpp::timer;
 using concurrencpp::timer_queue;
 using concurrencpp::details::timer_impl_base;
 
-timer_queue::timer_queue() noexcept : m_status(status::idle){}
+timer_queue::timer_queue() noexcept : m_status(status::idle) {}
 
-timer_queue::~timer_queue() noexcept {	
+timer_queue::~timer_queue() noexcept {
 	{
 		std::unique_lock<decltype(m_lock)> lock(m_lock);
 		if (m_status == status::idle) {
@@ -34,7 +34,7 @@ void timer_queue::add_timer(timer_ptr& head, timer_ptr new_timer) noexcept {
 		head = std::move(new_timer);
 		return;
 	}
-	
+
 	auto new_timer_ptr = new_timer.get();
 	auto head_ptr = head.get();
 
@@ -94,7 +94,7 @@ time_point<std::chrono::high_resolution_clock> timer_queue::process_timers() {
 		auto timer = cursor;
 		cursor = cursor->get_next();
 
-		const auto action = timer->update(now);		
+		const auto action = timer->update(now);
 		if (action == details::timer_action::fire) {
 			timer->schedule();
 		}
@@ -134,7 +134,7 @@ void timer_queue::work_loop() noexcept {
 			const auto now = clock_type::now();
 			if (deadline <= now) {
 				continue;
-			}	
+			}
 
 			m_condition.wait_until(lock, deadline, [this] {
 				return (m_status == status::cancelled) || (m_status == status::new_timer);
@@ -143,7 +143,7 @@ void timer_queue::work_loop() noexcept {
 			if (m_status == status::cancelled) {
 				return;
 			}
-	
+
 			if (m_status == status::new_timer) {
 				m_status = status::running;
 			}
@@ -156,10 +156,10 @@ void timer_queue::work_loop() noexcept {
 
 void timer_queue::ensure_worker_thread(std::unique_lock<std::mutex>& lock) {
 	assert(lock.owns_lock());
-	
+
 	if (m_status == status::idle) {
 		assert(!m_worker.joinable());
-	
+
 		m_worker = std::thread([this] {
 			work_loop();
 		});

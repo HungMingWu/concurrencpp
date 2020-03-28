@@ -29,7 +29,7 @@ namespace concurrencpp::details {
 }
 
 namespace concurrencpp::details {
-	template<class type> 
+	template<class type>
 	using result_state_ptr = std::unique_ptr<result_state<type>, result_state_ptr_deleter<type>>;
 	using void_coro_handle = std::experimental::coroutine_handle<void>;
 }

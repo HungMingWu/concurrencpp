@@ -52,7 +52,7 @@ void concurrencpp::tests::test_worker_thread_executor_destructor_test_0() {
 	});
 
 	executor->enqueue(cancellation_tester(exception_ptr));
-	
+
 	waiter.notify_all();
 	executor.reset();
 

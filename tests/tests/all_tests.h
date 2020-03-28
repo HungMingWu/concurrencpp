@@ -8,6 +8,8 @@ namespace concurrencpp::tests {
 
 	void test_thread_group();
 	void test_thread_pool();
+	void test_single_worker_thread();
+	void test_manual_worker();
 
 	void test_result_promise();
 	void test_result();
