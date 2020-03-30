@@ -37,7 +37,7 @@ void task_context::clear() noexcept {
 		ptr->~task_interface();
 	}
 	else {
-		delete m_pointer;
+		delete ptr;
 	}
 
 	m_pointer = nullptr;

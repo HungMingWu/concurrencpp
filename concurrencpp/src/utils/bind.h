@@ -9,10 +9,10 @@ namespace concurrencpp::details {
 		constexpr static auto inti = std::is_nothrow_invocable_v<callable_type, argument_types...>;
 		return[
 			callable = std::forward<callable_type>(callable),
-				tuple = std::make_tuple(std::forward<argument_types>(arguments)...)
+			tuple = std::make_tuple(std::forward<argument_types>(arguments)...)
 		]() mutable noexcept(inti) -> decltype(auto) {
 				return std::apply(callable, tuple);
-			};
+		};
 	}
 }
 

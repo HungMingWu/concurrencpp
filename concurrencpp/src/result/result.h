@@ -9,7 +9,6 @@
 #include "result_awaitable.h"
 
 namespace concurrencpp {
-
 	template <class type>
 	class result {
 
@@ -92,15 +91,21 @@ namespace concurrencpp {
 
 		operator bool() const noexcept { return static_cast<bool>(m_state); }
 	};
-}
 
-namespace concurrencpp {
 	template <class type>
 	class result_promise {
 
 	private:
 		details::result_state_ptr <type> m_state;
 
+		void throw_if_empty(const char* message) {
+			if (static_cast<bool>(m_state)) {
+				return;
+			}
+
+			throw errors::empty_result_promise(message);
+		}
+		
 		void break_task_if_needed() {
 			if (!static_cast<bool>(m_state)) {
 				return;
@@ -119,12 +124,6 @@ namespace concurrencpp {
 		template<class function_type, class ... argument_types>
 		void set_from_function_impl(std::false_type, function_type&& function, argument_types&& ... args) {
 			set_result(function(std::forward<argument_types>(args)...));
-		}
-
-		void throw_if_empty(const char* message) {
-			if (!static_cast<bool>(m_state)) {
-				throw errors::empty_result_promise(message);
-			}
 		}
 
 	public:
@@ -202,10 +201,7 @@ namespace concurrencpp {
 			return m_state->template share_state_as<result<type>>();
 		}
 	};
-}
-
-namespace concurrencpp {
-
+	
 	template<class type, class ... argument_types>
 	result<type> make_ready_result(argument_types&& ... arguments) {
 		result_promise<type> promise;

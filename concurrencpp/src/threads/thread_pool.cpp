@@ -52,22 +52,21 @@ concurrencpp::details::wait_all_node::wait_all_node(size_t max_workers) :
 	m_max_workers(max_workers) {}
 
 void concurrencpp::details::wait_all_node::thread_waiting() {
-	{
-		std::unique_lock<decltype(m_counter_lock)> lock(m_counter_lock);
-		++m_curr_waiting;
+	std::unique_lock<decltype(m_counter_lock)> lock(m_counter_lock);
+	++m_curr_waiting;
+
+	if (m_curr_waiting != m_max_workers) {
+		return;
 	}
 
+	lock.unlock();
 	m_counter_condition.notify_all();
 }
 
 void concurrencpp::details::wait_all_node::thread_running() {
-	{
-		std::unique_lock<decltype(m_counter_lock)> lock(m_counter_lock);
-		assert(m_curr_waiting != 0);
-		--m_curr_waiting;
-	}
-
-	m_counter_condition.notify_all();
+	std::unique_lock<decltype(m_counter_lock)> lock(m_counter_lock);
+	assert(m_curr_waiting != 0);
+	--m_curr_waiting;
 }
 
 void concurrencpp::details::wait_all_node::wait_all() {
@@ -75,6 +74,8 @@ void concurrencpp::details::wait_all_node::wait_all() {
 	m_counter_condition.wait(lock, [this] {
 		return m_curr_waiting == m_max_workers;
 	});
+
+	assert(m_curr_waiting == m_max_workers);
 }
 
 bool concurrencpp::details::wait_all_node::wait_all(std::chrono::milliseconds ms) {
@@ -102,6 +103,20 @@ thread_pool_worker::~thread_pool_worker() noexcept {
 	assert_idle_thread();
 }
 
+void thread_pool_worker::assert_self_thread() const noexcept {
+	assert(m_status != worker_status::idle);
+	assert(m_thread.joinable());
+	assert(m_thread.get_id() == std::this_thread::get_id());
+	assert(m_thread_id == m_thread.get_id());
+}
+
+void thread_pool_worker::assert_idle_thread() const noexcept {
+	assert(m_status == worker_status::idle);
+	assert(m_tasks.empty());
+	assert(m_thread_id == std::thread::id());
+	//m_thread might be joinable and might not. joinable != running.
+}
+
 thread_pool_worker::action_status thread_pool_worker::drain_local_queue() {
 	while (true) {
 		std::unique_lock<decltype(m_lock)> lock(m_lock);
@@ -126,20 +141,6 @@ thread_pool_worker::action_status thread_pool_worker::drain_local_queue() {
 
 thread_pool_worker::action_status thread_pool_worker::try_steal_task() {
 	return m_parent_pool.try_steal_task(*this) ? action_status::tasks_available : action_status::no_tasks;
-}
-
-void thread_pool_worker::assert_self_thread() const noexcept {
-	assert(m_status != worker_status::idle);
-	assert(m_thread.joinable());
-	assert(m_thread.get_id() == std::this_thread::get_id());
-	assert(m_thread_id == m_thread.get_id());
-}
-
-void thread_pool_worker::assert_idle_thread() const noexcept {
-	assert(m_status == worker_status::idle);
-	assert(m_tasks.empty());
-	assert(m_thread_id == std::thread::id());
-	//m_thread might be joinable and might not. joinable != running.
 }
 
 thread_pool_worker::action_status thread_pool_worker::wait_for_task_impl(std::unique_lock<std::mutex>& lock) {
@@ -391,10 +392,6 @@ thread_pool::~thread_pool() noexcept {
 	}
 }
 
-const thread_pool& thread_pool_worker::get_parent_pool() const noexcept {
-	return m_parent_pool;
-}
-
 std::thread::id thread_pool::enqueue(task task) {
 	auto this_thread_as_worker = thread_pool_worker::this_thread_as_worker();
 	if (this_thread_as_worker != nullptr) {
@@ -428,7 +425,7 @@ bool thread_pool::wait_all(std::chrono::milliseconds ms) {
 
 bool thread_pool::try_steal_task(thread_pool_worker& worker) {
 	/*
-		if this_thread's index is index0, try to steal from range [index0 + 1, ..., m_workers.size()]
+		if this_thread's index is index0, try to steal from range [index0 + 1, ..., m_workers.size() -1]
 		if no task was found, try steam from range [0, ..., index0 - 1]. this ensure low contention and nice distribution
 		of tasks across thread pool threads
 	*/
@@ -443,7 +440,6 @@ bool thread_pool::try_steal_task(thread_pool_worker& worker) {
 		task();
 		return true;
 	};
-
 
 	assert(std::addressof(worker) >= m_workers.data());
 	assert(std::addressof(worker) < m_workers.data() + m_workers.size());

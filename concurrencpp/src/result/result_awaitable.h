@@ -2,12 +2,12 @@
 #define CONCURRENCPP_RESULT_AWAITABLE_H
 
 #include "../errors.h"
+
 #include "result_fwd_declerations.h"
 
 #include <experimental/coroutine>
 
 namespace concurrencpp::details {
-
 	template<class type>
 	class awaitable_base {
 
@@ -41,14 +41,14 @@ namespace concurrencpp::details {
 		}
 
 	public:
-		constexpr bool await_ready() const noexcept { return false; }
+		constexpr static bool await_ready() noexcept { return false; }
 	};
 
 }
 
 namespace concurrencpp {
 	template<class type>
-	struct result_awaitable : public details::awaitable_base<type> {
+	struct result_awaitable final : public details::awaitable_base<type> {
 		result_awaitable() noexcept = default;
 		result_awaitable(result_awaitable&&) noexcept = default;
 
@@ -69,7 +69,7 @@ namespace concurrencpp {
 	};
 
 	template<class type>
-	struct result_resolver : public details::awaitable_base<type> {
+	struct result_resolver final : public details::awaitable_base<type> {
 		result_resolver() noexcept = default;
 		result_resolver(result_resolver&&) noexcept = default;
 

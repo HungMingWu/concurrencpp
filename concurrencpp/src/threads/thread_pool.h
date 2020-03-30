@@ -1,19 +1,18 @@
 #ifndef CONCURRENCPP_THREAD_POOL_H
 #define CONCURRENCPP_THREAD_POOL_H
 
+#include "thread_pool_listener.h"
+
 #include "../executors/task.h"
 #include "../utils/spinlock.h"
 #include "../utils/array_deque.h"
-#include "thread_pool_listener.h"
 
 #include <thread>
 #include <atomic>
 #include <mutex>
-#include <condition_variable>
-
 #include <vector>
-
 #include <string_view>
+#include <condition_variable>
 
 namespace concurrencpp::details {
 	class thread_pool;
@@ -99,14 +98,6 @@ namespace concurrencpp::details {
 		};
 
 		enum class worker_status {
-
-			/*
-			c.tor/d.tor <==>  idle <===> running
-								^		   |
-								|		   V
-								------- shutdown
-			*/
-
 			idle,
 			running,
 			shutdown
@@ -156,7 +147,6 @@ namespace concurrencpp::details {
 		void cancel_pending_tasks(std::exception_ptr reason) noexcept;
 
 		static thread_pool_worker* this_thread_as_worker() noexcept;
-		const thread_pool& get_parent_pool() const noexcept;
 		waiting_worker_stack::node* get_waiting_node() noexcept;
 	};
 

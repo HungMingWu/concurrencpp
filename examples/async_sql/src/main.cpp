@@ -1,6 +1,6 @@
 /*
 	It's the end of February and a company would like to congratulate all of its workers
-	who were born in March. to do so, the company's R&D team uses an asynchronous sql library,
+	who were born in March. To do so, the company's R&D team uses an asynchronous sql library,
 	that uses callbacks to marshal asynchronous results and events.
 
 	When using the library vanilla style, the application creates a db_connection object, calls

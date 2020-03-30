@@ -153,6 +153,12 @@ namespace concurrencpp::tests {
 			m_execution_thread = std::thread(std::move(t));
 		}
 
+		virtual void wait_all() override {}
+
+		virtual bool wait_all(std::chrono::milliseconds ms) override {
+			return false;
+		}
+
 		template<class type>
 		void set_rp_value(result_promise<type> rp) {
 			m_setting_thread = std::thread([rp = std::move(rp)]() mutable {
@@ -186,6 +192,13 @@ namespace concurrencpp::tests {
 
 		virtual void enqueue(task task) {
 			throw std::runtime_error("executor exception");
+		}
+
+		virtual void wait_all() {}
+
+		virtual bool wait_all(std::chrono::milliseconds ms) {
+			return false;
+			return false;
 		}
 	};
 

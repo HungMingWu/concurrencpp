@@ -133,6 +133,12 @@ namespace concurrencpp::tests {
 			task();
 		}
 
+		virtual void wait_all() {}
+
+		virtual bool wait_all(std::chrono::milliseconds ms) {
+			return false;
+		}
+
 		concurrencpp::timer start_timer_test(size_t due_time, size_t frequency) {
 			auto self = shared_from_this();
 			auto timer = m_timer_queue->create_timer(

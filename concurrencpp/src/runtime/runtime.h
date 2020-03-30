@@ -6,12 +6,6 @@
 #include "../timers/timer_queue.h"
 #include "../executors/executors.h"
 
-namespace concurrencpp::details {
-	struct thread_interrupter {};
-
-	void interrupt_thread();
-}
-
 namespace concurrencpp {
 	struct runtime_options {
 		size_t max_cpu_threads;
@@ -26,7 +20,7 @@ namespace concurrencpp {
 		runtime_options& operator = (const runtime_options&) noexcept = default;
 	};
 
-	class runtime : public std::enable_shared_from_this<runtime> {
+	class runtime {
 
 		friend std::shared_ptr<runtime> make_runtime();
 		friend std::shared_ptr<runtime> make_runtime(const runtime_options&);
@@ -44,8 +38,6 @@ namespace concurrencpp {
 	public:
 		runtime(const context& ctx);
 		runtime(const context& ctx, const runtime_options& options);
-
-		~runtime() noexcept;
 
 		std::shared_ptr<timer_queue> timer_queue() const noexcept;
 

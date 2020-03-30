@@ -22,8 +22,6 @@ namespace concurrencpp::details {
 
 	constexpr static std::chrono::seconds k_default_max_worker_wait_time =
 		std::chrono::seconds(consts::k_max_worker_waiting_time_sec);
-
-	void interrupt_thread() { throw thread_interrupter(); }
 }
 
 using concurrencpp::details::thread_group;
@@ -53,8 +51,7 @@ runtime_options::runtime_options() noexcept :
 	runtime
 */
 
-runtime::runtime(const runtime::context& ctx) :
-	runtime(ctx, runtime_options()) {}
+runtime::runtime(const runtime::context& ctx) : runtime(ctx, runtime_options()) {}
 
 runtime::runtime(const runtime::context& ctx, const runtime_options& options) {
 	m_timer_queue = std::make_shared<::concurrencpp::timer_queue>();
@@ -77,8 +74,6 @@ runtime::runtime(const runtime::context& ctx, const runtime_options& options) {
 
 	m_thread_executor = std::make_shared<::concurrencpp::thread_executor>(thread_executor::context());
 }
-
-runtime::~runtime() noexcept {}
 
 std::shared_ptr<concurrencpp::timer_queue> concurrencpp::runtime::timer_queue() const noexcept {
 	return m_timer_queue;

@@ -12,6 +12,8 @@
 namespace concurrencpp::tests {
 	void test_background_executor_name();
 	void test_background_executor_enqueue();
+	void test_background_executor_wait_all();
+	void test_background_executor_timed_wait_all();
 
 	void test_background_executor_destructor_test_0();
 	void test_background_executor_destructor_test_1();
@@ -43,6 +45,45 @@ void concurrencpp::tests::test_background_executor_enqueue() {
 	auto execution_map = observer.get_execution_map();
 
 	assert_same(execution_map.size(), opts.max_background_threads);
+}
+
+void concurrencpp::tests::test_background_executor_wait_all(){
+	auto executor = concurrencpp::make_runtime()->background_executor();
+	object_observer observer;
+
+	executor->enqueue([] {
+		std::this_thread::sleep_for(std::chrono::milliseconds(250));
+	});
+
+	const auto task_count = 128;
+	for (size_t i = 0; i < task_count; i++) {
+		executor->enqueue(observer.get_testing_stub());
+	}
+
+	executor->wait_all();
+
+	assert_same(observer.get_execution_count(), task_count);
+	assert_same(observer.get_destruction_count(), task_count);
+}
+
+void concurrencpp::tests::test_background_executor_timed_wait_all(){
+	auto executor = concurrencpp::make_runtime()->background_executor();
+	object_observer observer;
+
+	executor->enqueue([] {
+		std::this_thread::sleep_for(std::chrono::milliseconds(300));
+	});
+
+	const auto task_count = 128;
+	for (size_t i = 0; i < task_count; i++) {
+		executor->enqueue(observer.get_testing_stub());
+	}
+
+	assert_false(executor->wait_all(std::chrono::milliseconds(50)));
+	assert_true(executor->wait_all(std::chrono::seconds(2)));
+
+	assert_same(observer.get_execution_count(), task_count);
+	assert_same(observer.get_destruction_count(), task_count);
 }
 
 void concurrencpp::tests::test_background_executor_destructor_test_0() {

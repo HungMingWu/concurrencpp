@@ -2,15 +2,13 @@
 #define CONCURRENCPP_ARRAY_DEQUE_H
 
 #include <memory>
+#include <iterator>
 #include <algorithm>
 #include <type_traits>
 
 #include <cassert>
 
-#include <iterator>
-
 namespace concurrencpp::details {
-
 	template<class type> class array_deque;
 	template<class type> class array_deque_iterator;
 	template<class type> class const_array_deque_iterator;
@@ -87,7 +85,7 @@ namespace concurrencpp::details {
 		using iterator_category = std::forward_iterator_tag;
 		using value_type        = type;
 		using difference_type   = ptrdiff_t;
-		using pointer           = const type*;
+		using pointer           = const type *;
 		using reference         = const type &;
 
 	private:
@@ -275,7 +273,7 @@ namespace concurrencpp::details {
 		void emplace_back(argument_type&& ... arguments) {
 			static_assert(
 				std::is_constructible_v<type, argument_type...>,
-				"concurrencpp::details::array_deque::emplace_front - can't build <<type>> from <<argument_types...>>");
+				"concurrencpp::details::array_deque::emplace_back - can't build <<type>> from <<argument_types...>>");
 
 			ensure_initial_capacity();
 

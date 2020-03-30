@@ -1,9 +1,9 @@
 #ifndef CONCURRENCPP_EXECUTORS_H
 #define CONCURRENCPP_EXECUTORS_H
 
-#include "../forward_declerations.h"
-
 #include "executor.h"
+
+#include "../forward_declerations.h"
 #include "../threads/thread_pool.h"
 #include "../threads/thread_group.h"
 #include "../threads/single_worker_thread.h"
@@ -23,8 +23,11 @@ namespace concurrencpp {
 	public:
 		inline_executor(const inline_executor::context&) noexcept;
 
-		virtual std::string_view name() const noexcept;
-		virtual void enqueue(task task);
+		std::string_view name() const noexcept override;
+		void enqueue(task task) override;
+
+		void wait_all() override;
+		bool wait_all(std::chrono::milliseconds ms) override;
 	};
 
 	class thread_pool_executor final : public executor {
@@ -43,8 +46,11 @@ namespace concurrencpp {
 	public:
 		thread_pool_executor(const thread_pool_executor::context&);
 
-		virtual std::string_view name() const noexcept;
-		virtual void enqueue(task task);
+		std::string_view name() const noexcept override;
+		void enqueue(task task) override;
+
+		void wait_all() override;
+		bool wait_all(std::chrono::milliseconds ms) override;
 	};
 
 	class background_executor final : public executor {
@@ -57,15 +63,17 @@ namespace concurrencpp {
 			std::chrono::seconds max_waiting_time;
 		};
 
-
 	private:
 		details::thread_pool m_background_thread_pool;
 
 	public:
 		background_executor(const background_executor::context&);
 
-		virtual std::string_view name() const noexcept;
-		virtual void enqueue(task task);
+		std::string_view name() const noexcept override;
+		void enqueue(task task) override;
+
+		void wait_all() override;
+		bool wait_all(std::chrono::milliseconds ms) override;
 	};
 
 	class thread_executor final : public executor {
@@ -80,8 +88,11 @@ namespace concurrencpp {
 	public:
 		thread_executor(const thread_executor::context&) noexcept;
 
-		virtual std::string_view name() const noexcept;
-		virtual void enqueue(task task);
+		std::string_view name() const noexcept override;
+		void enqueue(task task) override;
+
+		void wait_all() override;
+		bool wait_all(std::chrono::milliseconds ms) override;
 	};
 
 	class worker_thread_executor final : public executor {
@@ -96,8 +107,11 @@ namespace concurrencpp {
 	public:
 		worker_thread_executor(const worker_thread_executor::context&);
 
-		virtual std::string_view name() const noexcept;
-		virtual void enqueue(task task);
+		std::string_view name() const noexcept override;
+		void enqueue(task task) override;
+
+		void wait_all() override;
+		bool wait_all(std::chrono::milliseconds ms) override;
 	};
 
 	class manual_executor final : public executor {
@@ -112,8 +126,8 @@ namespace concurrencpp {
 	public:
 		manual_executor(const manual_executor::context&);
 
-		virtual std::string_view name() const noexcept;
-		virtual void enqueue(task task);
+		std::string_view name() const noexcept override;
+		void enqueue(task task) override;
 
 		size_t size() const noexcept;
 		bool empty() const noexcept;
@@ -124,7 +138,10 @@ namespace concurrencpp {
 		void cancel_all(std::exception_ptr reason);
 
 		void wait_for_task();
-		bool wait_for_task(std::chrono::milliseconds max_waiting_time);
+		bool wait_for_task(std::chrono::milliseconds ms);
+
+		void wait_all() override;
+		bool wait_all(std::chrono::milliseconds ms) override;
 	};
 }
 

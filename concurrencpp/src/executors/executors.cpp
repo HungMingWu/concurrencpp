@@ -1,5 +1,6 @@
 #include "executors.h"
 #include "constants.h"
+
 #include "../errors.h"
 #include "../threads/thread_pool.h"
 #include "../threads/thread_group.h"
@@ -32,6 +33,12 @@ void inline_executor::enqueue(task task) {
 	task();
 }
 
+void concurrencpp::inline_executor::wait_all() {}
+
+bool concurrencpp::inline_executor::wait_all(std::chrono::milliseconds ms) {
+	return true;
+}
+
 /*
 	thread_pool_executor
 */
@@ -45,6 +52,14 @@ std::string_view thread_pool_executor::name() const noexcept {
 
 void thread_pool_executor::enqueue(task task) {
 	m_cpu_thread_pool.enqueue(std::move(task));
+}
+
+void concurrencpp::thread_pool_executor::wait_all() {
+	m_cpu_thread_pool.wait_all();
+}
+
+bool concurrencpp::thread_pool_executor::wait_all(std::chrono::milliseconds ms) {
+	return m_cpu_thread_pool.wait_all(ms);
 }
 
 /*
@@ -62,6 +77,14 @@ void background_executor::enqueue(task task) {
 	m_background_thread_pool.enqueue(std::move(task));
 }
 
+void concurrencpp::background_executor::wait_all() {
+	m_background_thread_pool.wait_all();
+}
+
+bool concurrencpp::background_executor::wait_all(std::chrono::milliseconds ms) {
+	return m_background_thread_pool.wait_all(ms);
+}
+
 /*
 	thread_executor
 */
@@ -77,6 +100,14 @@ void thread_executor::enqueue(task task) {
 	m_thread_group.enqueue(std::move(task));
 }
 
+void concurrencpp::thread_executor::wait_all() {
+	m_thread_group.wait_all();
+}
+
+bool concurrencpp::thread_executor::wait_all(std::chrono::milliseconds ms) {
+	return m_thread_group.wait_all(ms);
+}
+
 /*
 	worker_thread_executor
 */
@@ -90,6 +121,14 @@ std::string_view worker_thread_executor::name() const noexcept {
 
 void worker_thread_executor::enqueue(task task) {
 	m_worker.enqueue(std::move(task));
+}
+
+void concurrencpp::worker_thread_executor::wait_all() {
+	m_worker.wait_all();
+}
+
+bool concurrencpp::worker_thread_executor::wait_all(std::chrono::milliseconds ms) {
+	return m_worker.wait_all(ms);
 }
 
 /*
@@ -131,6 +170,14 @@ void manual_executor::wait_for_task() {
 	m_worker.wait_for_task();
 }
 
-bool manual_executor::wait_for_task(std::chrono::milliseconds max_waiting_time) {
-	return m_worker.wait_for_task(max_waiting_time);
+bool manual_executor::wait_for_task(std::chrono::milliseconds ms) {
+	return m_worker.wait_for_task(ms);
+}
+
+void concurrencpp::manual_executor::wait_all() {
+	m_worker.wait_all();
+}
+
+bool concurrencpp::manual_executor::wait_all(std::chrono::milliseconds ms) {
+	return m_worker.wait_all(ms);
 }

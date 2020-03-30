@@ -13,29 +13,33 @@
 #include <cassert>
 
 namespace concurrencpp::details {
-	template<class type_t>
+	template<class type>
 	class async_value {
 
 	private:
-		type_t m_object;
+		type m_object;
 
 	public:
 		template<class ... argument_types>
 		async_value(argument_types&& ... arguments) : m_object(std::forward<argument_types>(arguments)...) {}
 
-		type_t get() { return std::move(m_object); }
+		type get() { return std::move(m_object); }
 	};
 
-	template<class type_t>
-	class async_value<type_t&> {
+	template<class type>
+	class async_value<type&> {
 
 	private:
-		type_t* m_pointer;
+		type* m_pointer;
 
 	public:
-		async_value(type_t& ref_result) noexcept : m_pointer(std::addressof(ref_result)) {}
+		async_value(type& ref_result) noexcept : m_pointer(std::addressof(ref_result)) {}
 
-		type_t& get() noexcept { return *m_pointer; }
+		type& get() noexcept { 
+			assert(m_pointer != nullptr);
+			assert(reinterpret_cast<std::uintptr_t>(m_pointer) % alignof(type) == 0);
+			return *m_pointer; 
+		}
 	};
 
 	template<>

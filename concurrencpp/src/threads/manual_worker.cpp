@@ -1,4 +1,5 @@
 #include "manual_worker.h"
+
 #include "../errors.h"
 
 concurrencpp::details::manual_worker::manual_worker(std::string_view cancellation_msg) :
@@ -7,7 +8,6 @@ concurrencpp::details::manual_worker::manual_worker(std::string_view cancellatio
 concurrencpp::details::manual_worker::~manual_worker() noexcept {
 	concurrencpp::errors::broken_task error(m_cancellation_msg);
 	const auto exception_ptr = std::make_exception_ptr(error);
-
 	cancel_all(exception_ptr);
 }
 
@@ -40,6 +40,7 @@ bool concurrencpp::details::manual_worker::loop_once() {
 	lock.unlock();
 
 	task();
+	task.clear();
 
 	if (task_queue_is_empty) {
 		m_pop_condition.notify_all();
@@ -82,6 +83,7 @@ bool concurrencpp::details::manual_worker::wait_for_task(std::chrono::millisecon
 void concurrencpp::details::manual_worker::wait_all() {
 	std::unique_lock<decltype(m_lock)> lock(m_lock);
 	m_pop_condition.wait(lock, [this] { return m_tasks.empty(); });
+	assert(m_tasks.empty());
 }
 
 bool concurrencpp::details::manual_worker::wait_all(std::chrono::milliseconds ms) {

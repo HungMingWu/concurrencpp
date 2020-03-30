@@ -2,8 +2,10 @@
 #define CONCURRENCPP_EXECUTOR_H
 
 #include "task.h"
+
 #include "../result/result_fwd_declerations.h"
 
+#include <chrono>
 #include <string_view>
 
 namespace concurrencpp::details {
@@ -38,6 +40,9 @@ namespace concurrencpp {
 		virtual std::string_view name() const noexcept = 0;
 		virtual void enqueue(task task) = 0;
 
+		virtual void wait_all() = 0;
+		virtual bool wait_all(std::chrono::milliseconds ms) = 0;
+
 		template<class functor_type>
 		auto submit(functor_type&& functor) {
 			using decayed_functor_type = typename std::decay_t<functor_type>;
@@ -49,6 +54,7 @@ namespace concurrencpp {
 			enqueue(task_type(std::move(promise), std::forward<functor_type>(functor)));
 			return result;
 		}
+
 	};
 }
 

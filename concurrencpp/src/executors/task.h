@@ -27,11 +27,13 @@ namespace concurrencpp::details {
 		template<class type, class ignored = void>
 		struct has_cancel_impl : std::false_type {};
 
+		//the ugliest piece of code in this repo. basically, using SFINAE this struct
+		//detects the presence of <<void cancel(std::exception_ptr) noexcept>>
 		template<class type>
 		struct has_cancel_impl<type,
 			typename std::void_t<
-			decltype(std::declval<type>().cancel(std::declval<std::exception_ptr>())),
-			typename std::enable_if_t<std::is_same_v<decltype(std::declval<type>().cancel(std::declval<std::exception_ptr>())), void>>
+				decltype(std::declval<type>().cancel(std::declval<std::exception_ptr>())),
+				typename std::enable_if_t<std::is_same_v<decltype(std::declval<type>().cancel(std::declval<std::exception_ptr>())), void>>
 			>> : std::bool_constant<noexcept(std::declval<type>().cancel(std::declval<std::exception_ptr>()))> {};
 
 	public:
@@ -135,17 +137,17 @@ namespace concurrencpp::details {
 
 		task_impl(task_impl&&) noexcept(functor_traits<functor_type>::is_nothrow_movable) = default;
 
-		void execute() { m_functor(); }
+		void execute() override { m_functor(); }
 
-		void cancel(std::exception_ptr reason) noexcept {
+		void cancel(std::exception_ptr reason) noexcept override {
 			cancel_impl(reason, has_cancel());
 		}
 
-		virtual void move_to(task_context& dest) noexcept {
+		virtual void move_to(task_context& dest) noexcept override {
 			dest.build<task_impl<functor_type>>(std::move(*this));
 		}
 
-		virtual const std::type_info& type() const noexcept {
+		virtual const std::type_info& type() const noexcept override {
 			return typeid(functor_type);
 		}
 	};

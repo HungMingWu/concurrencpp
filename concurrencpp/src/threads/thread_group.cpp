@@ -24,10 +24,10 @@ namespace concurrencpp::details {
 	};
 }
 
-using concurrencpp::details::thread_pool_listener_base;
-using concurrencpp::details::thread_group_worker;
-using concurrencpp::details::thread_group;
 using concurrencpp::task;
+using concurrencpp::details::thread_group;
+using concurrencpp::details::thread_group_worker;
+using concurrencpp::details::thread_pool_listener_base;
 
 using listener_ptr = std::shared_ptr<thread_pool_listener_base>;
 

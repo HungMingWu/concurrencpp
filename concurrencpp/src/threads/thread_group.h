@@ -20,8 +20,8 @@ namespace concurrencpp::details {
 		std::mutex m_lock;
 		std::list<thread_group_worker> m_workers;
 		std::condition_variable m_condition;
-		const std::shared_ptr<thread_pool_listener_base> m_listener;
 		std::list<thread_group_worker> m_last_retired;
+		const std::shared_ptr<thread_pool_listener_base> m_listener;
 
 		void enqueue_worker(task& callable);
 		void clear_last_retired(std::list<thread_group_worker> last_retired);

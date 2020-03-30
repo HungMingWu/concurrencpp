@@ -7,7 +7,7 @@
 #include <memory>
 
 namespace concurrencpp::errors {
-	struct executor_exception : public std::runtime_error {
+	struct executor_exception final : public std::runtime_error {
 		std::exception_ptr thrown_exeption;
 		std::shared_ptr<concurrencpp::executor> throwing_executor;
 

@@ -67,7 +67,7 @@ namespace mock_async_sql {
 				std::this_thread::sleep_for(std::chrono::seconds(2));
 
 				if (failed()) {
-					auto error_ptr = std::make_exception_ptr(std::runtime_error("db_connection::connect - can't connect."));
+					auto error_ptr = std::make_exception_ptr(std::runtime_error("db_connection::query - can't execute query."));
 					return cb->on_query(error_ptr, nullptr, {});
 				}
 

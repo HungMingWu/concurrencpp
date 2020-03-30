@@ -23,6 +23,9 @@ namespace concurrencpp::tests {
 	void test_manual_executor_wait_for_task_timed();
 	void test_manual_executor_wait_for_task();
 
+	void test_manual_executor_wait_all();
+	void test_manual_executor_timed_wait_all();
+
 	void test_manual_executor_destructor_test_0();
 	void test_manual_executor_destructor_test_1();
 	void test_manual_executor_destructor();
@@ -232,6 +235,54 @@ void concurrencpp::tests::test_manual_executor_wait_for_task() {
 	test_manual_executor_wait_for_task_timed();
 }
 
+void concurrencpp::tests::test_manual_executor_wait_all() {
+	auto executor = concurrencpp::make_runtime()->manual_executor();
+	object_observer observer;
+	const size_t task_count = 64;
+
+	for (size_t i = 0; i < task_count; i++) {
+		executor->enqueue(observer.get_testing_stub());
+	}
+
+	std::thread unblocker([task_count, executor]() mutable {
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		executor->loop(task_count);
+	});
+
+	executor->wait_all();
+
+	assert_same(observer.get_execution_count(), task_count);
+	assert_same(observer.get_destruction_count(), task_count);
+
+	unblocker.join();
+}
+
+void concurrencpp::tests::test_manual_executor_timed_wait_all() {
+	auto executor = concurrencpp::make_runtime()->manual_executor();
+	object_observer observer;
+	const size_t task_count = 64;
+
+	for (size_t i = 0; i < task_count; i++) {
+		executor->enqueue(observer.get_testing_stub());
+	}
+
+	for (size_t i = 0; i < 5; i++) {
+		assert_false(executor->wait_all(std::chrono::milliseconds(25)));
+	}
+
+	std::thread unblocker([task_count, executor]() mutable {
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		executor->loop(task_count);
+	});
+
+	assert_true(executor->wait_all(std::chrono::seconds(5)));
+
+	assert_same(observer.get_execution_count(), task_count);
+	assert_same(observer.get_destruction_count(), task_count);
+
+	unblocker.join();
+}
+
 void concurrencpp::tests::test_manual_executor_destructor_test_0() {
 	object_observer observer;
 	auto executor = concurrencpp::make_runtime()->manual_executor();
@@ -262,18 +313,21 @@ void concurrencpp::tests::test_manual_executor_destructor_test_1() {
 
 void concurrencpp::tests::test_manual_executor_destructor() {
 	test_manual_executor_destructor_test_0();
+	test_manual_executor_destructor_test_1();
 }
 
 void concurrencpp::tests::test_manual_executor() {
 	tester tester("manual_executor test");
 
+	tester.add_step("~manual_executor", test_manual_executor_destructor);
 	tester.add_step("name", test_manual_executor_name);
 	tester.add_step("enqueue", test_manual_executor_enqueue);
 	tester.add_step("loop_once", test_manual_executor_loop_once);
 	tester.add_step("loop", test_manual_executor_loop);
 	tester.add_step("cancel_all", test_manual_executor_cancel_all);
 	tester.add_step("wait_for_task", test_manual_executor_wait_for_task);
-	tester.add_step("~manual_executor", test_manual_executor_destructor);
+	tester.add_step("wait_all", test_manual_executor_wait_all);
+	tester.add_step("wait_all(ms)", test_manual_executor_timed_wait_all);
 
 	tester.launch_test();
 }

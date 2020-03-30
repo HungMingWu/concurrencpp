@@ -43,6 +43,7 @@ void concurrencpp::details::single_worker_thread::cancel_all_tasks() {
 void single_worker_thread::work_loop() noexcept {
 	while (true) {
 		std::unique_lock<decltype(m_lock)> lock(m_lock);
+		
 		if (m_tasks.empty()) {
 			m_pop_condition.notify_all();
 		}
@@ -86,6 +87,7 @@ void single_worker_thread::enqueue(task task) {
 void concurrencpp::details::single_worker_thread::wait_all() {
 	std::unique_lock<decltype(m_lock)> lock(m_lock);
 	m_pop_condition.wait(lock, [this] { return m_tasks.empty(); });
+	assert(m_tasks.empty());
 }
 
 bool concurrencpp::details::single_worker_thread::wait_all(std::chrono::milliseconds ms) {

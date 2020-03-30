@@ -8,5 +8,6 @@ int main() {
 		std::cout << "hello world" << std::endl;
 	});
 
+	result.get();
 	return 0;
 }
