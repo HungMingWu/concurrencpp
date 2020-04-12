@@ -2,6 +2,7 @@
 #define CONCURRENCPP_BIND_H
 
 #include <type_traits>
+#include <tuple>
 
 namespace concurrencpp::details {
 	template<class callable_type, class ... argument_types>
